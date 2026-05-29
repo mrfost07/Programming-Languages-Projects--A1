@@ -60,6 +60,8 @@ While you're inside the `GitHub Projects` folder:
 
 1. Right-click on empty space inside the folder.
 2. Choose **Open Git Bash here** (or **Show more options** → Open Git Bash here on Windows 11).
+
+   **OR** if you don't have Git Bash in the right-click menu: click the address bar at the top of File Explorer, type `cmd`, and press Enter. A black command prompt opens already in this folder.
 3. A black terminal window opens. Paste this and press Enter:
    ```bash
    git clone https://github.com/mrfost07/Programming-Languages-Projects--A1.git
@@ -75,6 +77,8 @@ Inside, you'll see all the group folders — including yours.
 ### Step 4 — Make your branch (so you don't push to main)
 
 1. Right-click on empty space inside `Programming-Languages-Projects--A1` → **Open Git Bash here**.
+
+   **OR** click the address bar at the top of File Explorer, type `cmd`, and press Enter to open Command Prompt in this folder.
 2. Paste this (change the group name to yours):
    ```bash
    git checkout -b submission/Fajardo-Baybay
@@ -107,7 +111,7 @@ Fajardo-Baybay/
 
 ### Step 7 — Commit and push
 
-Go back to the Git Bash terminal you left open in Step 4. Run these one by one:
+Go back to the terminal you left open in Step 4 (Git Bash or cmd, either works). Run these one by one:
 
 ```bash
 git add Fajardo-Baybay/
@@ -129,13 +133,14 @@ Done. ✅
 
 ### Full command summary
 
-You'll only ever type these inside Git Bash. Replace `Fajardo-Baybay` with your group:
+You'll only ever type these inside your terminal (Git Bash or cmd). Replace `Fajardo-Baybay` with your group:
 
 ```bash
-# After right-clicking → Open Git Bash here inside your "GitHub Projects" folder:
+# After opening a terminal inside your "GitHub Projects" folder
+# (right-click → Open Git Bash here, OR type "cmd" in the address bar):
 git clone https://github.com/mrfost07/Programming-Languages-Projects--A1.git
 
-# After right-clicking → Open Git Bash here inside the cloned folder:
+# After opening a terminal inside the cloned folder the same way:
 git checkout -b submission/Fajardo-Baybay
 # (now copy-paste your project files into the Fajardo-Baybay folder using File Explorer)
 git add Fajardo-Baybay/
