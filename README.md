@@ -108,8 +108,7 @@ Inside, you'll see all the group folders. Find yours. **If your group folder isn
 ![Find or create your group folder](screenshots/9.png)
 
 ### Step 10 — Paste all your project files into your group folder
-
-Copy **all** your project files and folders from wherever you built your project, and paste them inside your group's folder.
+Open another file manager, navigate to your project copy or drag and drop **all** your project files and folders here.
 
 ⚠️ **Do NOT include `node_modules` or virtual environment folders (`venv`, `.venv`).** Only your actual source code, files, and folders.
 
