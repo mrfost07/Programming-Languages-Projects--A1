@@ -20,8 +20,8 @@ Submission repository for our Programming Languages class projects. Each group h
 
 1. Clone this repository:
    ```bash
-   git clone <repo-url>
-   cd ProgrammingLanguageProject-A1
+   git clone https://github.com/mrfost07/Programming-Languages-Projects--A1.git
+   cd Programming-Languages-Projects--A1
    ```
 
 2. Create a feature branch with your group name:
@@ -59,7 +59,7 @@ cd Desktop
 
 ```bash
 git clone https://github.com/mrfost07/Programming-Languages-Projects--A1.git
-cd ProgrammingLanguageProject-A1
+cd Programming-Languages-Projects--A1
 ```
 
 After this, you'll be **inside** the repo folder.
@@ -162,7 +162,7 @@ Done. ✅
 ```bash
 cd Desktop
 git clone https://github.com/mrfost07/Programming-Languages-Projects--A1.git
-cd ProgrammingLanguageProject-A1
+cd Programming-Languages-Projects--A1
 git checkout main
 git pull origin main
 git checkout -b submission/Fajardo-Baybay
