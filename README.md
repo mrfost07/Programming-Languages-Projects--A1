@@ -2,8 +2,6 @@
 
 Submission repository for our Programming Languages class projects. Each group has its own folder. Push your project files into your group's folder only.
 
-> **Windows users only.** This guide assumes you're on Windows 10/11 with File Explorer.
-
 ## Groups
 
 - Fajardo-Baybay
