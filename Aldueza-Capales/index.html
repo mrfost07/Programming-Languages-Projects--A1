@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Management System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div class="container">
+
+  <!-- DARK MODE TOGGLE -->
+  <div class="theme-toggle">
+    <button id="themeBtn" onclick="toggleTheme()">
+      <i class="fas fa-moon"></i>
+    </button>
+  </div>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-content">
+      <span class="badge">
+        <i class="fas fa-database"></i> Garbage Collection Dashboard
+      </span>
+      <h1>Memory Management System</h1>
+      <p>Real-time visualization of object allocation, and garbage collection</p>
+    </div>
+    <div class="header-decoration"></div>
+  </div>
+
+  <!-- MEMORY STATS CARDS -->
+  <div class="stats-grid">
+    <div class="stat-card total" data-stat="total">
+      <div class="stat-icon">
+        <i class="fas fa-hdd"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Total Memory</div>
+        <div class="stat-value" id="totalMemory">100 MB</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width: 100%"></div></div>
+      </div>
+    </div>
+    
+    <div class="stat-card used" data-stat="used">
+      <div class="stat-icon">
+        <i class="fas fa-memory"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Used Memory</div>
+        <div class="stat-value" id="usedMemory">0 MB</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width: 0%"></div></div>
+      </div>
+    </div>
+    
+    <div class="stat-card free" data-stat="free">
+      <div class="stat-icon">
+        <i class="fas fa-wind"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Free Memory</div>
+        <div class="stat-value" id="freeMemory">100 MB</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width: 100%"></div></div>
+      </div>
+    </div>
+    
+    <div class="stat-card count" data-stat="count">
+      <div class="stat-icon">
+        <i class="fas fa-boxes"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-label">Active Objects</div>
+        <div class="stat-value" id="objectCount">0</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width: 0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMORY USAGE PROGRESS -->
+  <div class="memory-progress-section">
+    <div class="progress-info">
+      <h3>Memory Usage Overview</h3>
+      <div class="progress-stats">
+        <span class="progress-stat">
+          <strong id="usagePercent">0%</strong> Used
+        </span>
+        <span class="progress-divider"></span>
+        <span class="progress-stat">
+          <strong id="freePercent">100%</strong> Available
+        </span>
+      </div>
+    </div>
+    <div class="progress-track">
+      <div id="memoryProgress" class="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- ADVANCED CONTROLS -->
+  <div class="control-panel">
+    <div class="control-group" style="grid-column:1/-1;">
+      <label class="control-label">
+        <i class="fas fa-code"></i> JavaScript Code
+      </label>
+
+      <textarea
+          id="codeInput"
+          rows="10"
+          placeholder="Paste JavaScript code here..."
+          style="
+          width:100%;
+          padding:15px;
+          border-radius:12px;
+          resize:vertical;
+          font-family:Consolas, monospace;">
+      </textarea>
+    </div>
+
+    <div class="control-group">
+      <label for="gcType" class="control-label">
+        <i class="fas fa-cogs"></i> GC Strategy
+      </label>
+      <select id="gcType">
+        <option value="explicit">Explicit GC</option>
+        <option value="implicit">Implicit GC</option>
+      </select>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn btn-primary" onclick="analyzeCode()">
+        <i class="fas fa-code"></i> Analyze Code
+      </button>
+      <button class="btn btn-danger" onclick="runGC()">
+        <i class="fas fa-trash-alt"></i> Run GC
+      </button>
+      <button class="btn btn-secondary" onclick="clearLogs()">
+        <i class="fas fa-eraser"></i> Clear Logs
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT LAYOUT -->
+  <div class="content-layout">
+    <div class="objects-section">
+      <div class="section-header">
+        <div class="header-title">
+          <i class="fas fa-layer-group"></i>
+          <h2>Memory Objects</h2>
+        </div>
+        <span class="object-count" id="objectCountBadge">0</span>
+      </div>
+      <div id="objectsContainer" class="objects-list"></div>
+    </div>
+
+    <div class="logs-section">
+      <div class="section-header">
+        <div class="header-title">
+          <i class="fas fa-terminal"></i>
+          <h2>System Logs</h2>
+        </div>
+        <span class="log-count" id="logCount">0 entries</span>
+      </div>
+      <div class="logs" id="logs"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/acorn@8/dist/acorn.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
