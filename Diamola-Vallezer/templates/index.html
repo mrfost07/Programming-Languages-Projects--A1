@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duck Typing Interactive Simulation</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>🦆 Duck Typing Simulation</h1>
+        <p>"If it walks like a duck and quacks like a duck, it is treated as a duck."</p>
+    </div>
+
+    <div class="main-grid">
+
+        <div class="card">
+            <h2>💻 Code Runner</h2>
+
+            <div class="typing-code-box">
+                <div class="input-group">
+                    <label for="aiEngine">AI Engine</label>
+                    <select id="aiEngine">
+                        <option>Claude</option>
+                        <option>jules</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="language">Language</label>
+                    <select id="language">
+                        <option>Python</option>
+                        <option>JavaScript</option>
+                        <option>Java</option>
+                    </select>
+                </div>
+
+                <label for="codeInput">Code Sample / Input</label>
+                <textarea id="codeInput" rows="12">class Duck:
+    def quack(self):
+        print("Quack!")
+
+    def walk(self):
+        print("Walking...")
+
+if __name__ == '__main__':
+    duck = Duck()
+    duck.quack()
+    duck.walk()</textarea>
+
+                <div id="codeRunOutput" class="code-run-output" aria-live="polite" role="status">
+                    Run code to see output.
+                </div>
+
+                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;">
+                    <button type="button" onclick="runCodeFromInput()">Run Code</button>
+                    <button type="button" onclick="copyCodeToClipboard()">Copy Code</button>
+                </div>
+
+                <div id="typingInfo" class="typing-note" style="margin-top:18px;">
+                    Select a language and engine to see runtime info.
+                </div>
+
+                <div id="pyStatus" class="typing-note" style="margin-top:12px;">
+                    Python runtime: initializing...
+                </div>
+            </div>
+
+            <h2>📘 Explanation</h2>
+            <p style="line-height: 1.8;">
+                Duck Typing checks behavior, not type.
+            </p>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
