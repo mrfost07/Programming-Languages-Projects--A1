@@ -1,0 +1,103 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duck Typing Simulator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="hero">
+            <div>
+                <span class="hero-badge">Python Duck Typing</span>
+                <h1>Duck Typing Simulator</h1>
+                <p>Paste your Python code, run it, and see whether the behavior matches duck typing.</p>
+            </div>
+        </header>
+
+        <main class="layout-grid">
+            <section class="card card-panel card-samples">
+                <div class="card-header">
+                    <div>
+                        <h2>Sample snippets</h2>
+                        <p>Copy one of the examples into the editor to see accepted or rejected code behavior.</p>
+                    </div>
+                </div>
+
+                <div class="sample-grid">
+                    <article class="sample-card">
+                        <div class="sample-title">Accepted: Duck typing</div>
+                        <pre><code>class Duck:
+    def quack(self):
+        return 'Quack!'
+
+class Person:
+    def quack(self):
+        return 'I can imitate a duck!' 
+
+obj = Person()
+print(obj.quack())</code></pre>
+                        <button type="button" class="copy-button" data-snippet="accepted">Copy code</button>
+                    </article>
+                    <article class="sample-card">
+                        <div class="sample-title">Rejected: Wrong method</div>
+                        <pre><code>class Dog:
+    def bark(self):
+        return 'Woof!'
+
+obj = Dog()
+print(obj.quack())</code></pre>
+                        <button type="button" class="copy-button" data-snippet="rejected">Copy code</button>
+                    </article>
+                </div>
+            </section>
+
+            <section class="card card-panel">
+                <div class="card-header">
+                    <div>
+                        <h2>Code Input</h2>
+                        <p>Enter your Python code below. The application will execute it and show the output.</p>
+                    </div>
+                </div>
+
+                <form method="POST" class="code-form">
+                    <textarea id="code-input" name="code" placeholder="Enter Python code here..."># Paste Python code here to run and check duck typing behavior</textarea>
+                    <button type="submit" class="primary-button">Run Code</button>
+                </form>
+            </section>
+
+            <section class="card card-panel card-output">
+                <div class="card-header">
+                    <div>
+                        <h2>Console Output</h2>
+                        <p>Execution results appear here after running your code.</p>
+                    </div>
+                </div>
+
+                <div class="output">
+                    <pre>{{ output }}</pre>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const snippets = {
+            accepted: `class Duck:\n    def quack(self):\n        return 'Quack!'\n\nclass Person:\n    def quack(self):\n        return 'I can imitate a duck!'\n\nobj = Person()\nprint(obj.quack())`,
+            rejected: `class Dog:\n    def bark(self):\n        return 'Woof!'\n\nobj = Dog()\nprint(obj.quack())`
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.copy-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const snippetKey = button.dataset.snippet;
+                    const codeInput = document.getElementById('code-input');
+                    codeInput.value = snippets[snippetKey];
+                    codeInput.focus();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
