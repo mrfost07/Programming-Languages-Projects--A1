@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Language Translation Pipeline — Stack, Claude, Jules & Stitch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── RESET & BASE ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0f0f13;
+      --bg2:        #16161c;
+      --bg3:        #1d1d26;
+      --border:     rgba(255,255,255,0.08);
+      --border2:    rgba(255,255,255,0.14);
+      --text:       #e8e6f0;
+      --text2:      #9390a8;
+      --text3:      #5e5c6e;
+
+      --stack:      #1D9E75;
+      --stack-bg:   rgba(29,158,117,0.14);
+      --claude:     #8b7ff5;
+      --claude-bg:  rgba(139,127,245,0.14);
+      --jules:      #f07044;
+      --jules-bg:   rgba(240,112,68,0.14);
+      --stitch:     #4da3f5;
+      --stitch-bg:  rgba(77,163,245,0.14);
+
+      --radius:     10px;
+      --radius-lg:  16px;
+      --font:       'Sora', sans-serif;
+      --mono:       'Space Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* ─── HEADER ─────────────────────────────────────────────────── */
+    header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--stack), var(--claude));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+      font-size: 13px; font-weight: 700;
+      color: #fff;
+    }
+    .logo-text h1 {
+      font-size: 15px; font-weight: 700; color: var(--text);
+      letter-spacing: -.01em;
+    }
+    .logo-text p {
+      font-size: 11px; color: var(--text2);
+    }
+    .header-badge {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text2);
+    }
+    .header-badge span { color: var(--stack); }
+
+    /* ─── MAIN LAYOUT ────────────────────────────────────────────── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    /* ─── SECTION LABELS ─────────────────────────────────────────── */
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 10px;
+    }
+
+    /* ─── INPUT PANEL ────────────────────────────────────────────── */
+    .input-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .input-row input[type="text"] {
+      flex: 1;
+      min-width: 200px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 11px 16px;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      transition: border-color .2s;
+    }
+    .input-row input[type="text"]:focus { border-color: var(--stack); }
+    .input-row input[type="text"]::placeholder { color: var(--text3); }
+    .input-row select {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 11px 14px;
+      font-family: var(--font);
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .run-btn {
+      background: var(--stack);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 11px 28px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .01em;
+      transition: opacity .2s, transform .12s;
+    }
+    .run-btn:hover { opacity: .88; }
+    .run-btn:active { transform: scale(.97); }
+    .run-btn:disabled { opacity: .35; cursor: default; }
+    .reset-btn {
+      background: transparent;
+      color: var(--text2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 11px 18px;
+      font-family: var(--font);
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color .2s, color .2s;
+    }
+    .reset-btn:hover { border-color: var(--border2); color: var(--text); }
+
+    /* ─── STEP PILLS ─────────────────────────────────────────────── */
+    .steps-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .step-pill {
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--mono);
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      background: var(--bg2);
+      transition: all .35s;
+      cursor: default;
+    }
+    .step-pill.active  { color: #fff; border-color: transparent; }
+    .step-pill.done    { opacity: .45; }
+    .step-pill[data-color="stack"].active  { background: var(--stack); }
+    .step-pill[data-color="claude"].active { background: var(--claude); }
+    .step-pill[data-color="jules"].active  { background: var(--jules); }
+    .step-pill[data-color="stitch"].active { background: var(--stitch); }
+
+    /* ─── PIPELINE BAR ───────────────────────────────────────────── */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .stage {
+      padding: 18px 16px;
+      border-right: 1px solid var(--border);
+      position: relative;
+      transition: background .35s;
+      cursor: default;
+    }
+    .stage:last-child { border-right: none; }
+    .stage.active { background: var(--bg3); }
+    .stage-indicator {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 0;
+      transition: background .35s, opacity .35s;
+      opacity: 0;
+    }
+    .stage.active .stage-indicator { opacity: 1; }
+    .stage[data-agent="stack"].active  .stage-indicator { background: var(--stack); }
+    .stage[data-agent="claude"].active .stage-indicator { background: var(--claude); }
+    .stage[data-agent="jules"].active  .stage-indicator { background: var(--jules); }
+    .stage[data-agent="stitch"].active .stage-indicator { background: var(--stitch); }
+
+    .stage-avatar {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+      font-size: 12px; font-weight: 700;
+      margin-bottom: 10px;
+      transition: transform .35s;
+    }
+    .stage.active .stage-avatar { transform: scale(1.05); }
+    .stage-avatar.stack  { background: var(--stack-bg);  color: var(--stack); }
+    .stage-avatar.claude { background: var(--claude-bg); color: var(--claude); }
+    .stage-avatar.jules  { background: var(--jules-bg);  color: var(--jules); }
+    .stage-avatar.stitch { background: var(--stitch-bg); color: var(--stitch); }
+
+    .stage-name {
+      font-size: 14px; font-weight: 700;
+      margin-bottom: 3px;
+    }
+    .stage-name.stack  { color: var(--stack); }
+    .stage-name.claude { color: var(--claude); }
+    .stage-name.jules  { color: var(--jules); }
+    .stage-name.stitch { color: var(--stitch); }
+
+    .stage-desc { font-size: 11px; color: var(--text2); line-height: 1.45; }
+
+    .stage-status {
+      position: absolute;
+      bottom: 10px; right: 14px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border2);
+      transition: background .3s;
+    }
+    .stage.active .stage-status { animation: blink 1.1s ease-in-out infinite; }
+    .stage[data-agent="stack"].active  .stage-status { background: var(--stack); }
+    .stage[data-agent="claude"].active .stage-status { background: var(--claude); }
+    .stage[data-agent="jules"].active  .stage-status { background: var(--jules); }
+    .stage[data-agent="stitch"].active .stage-status { background: var(--stitch); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ─── MIDDLE ROW ─────────────────────────────────────────────── */
+    .middle-row {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    /* ─── STACK PANEL ────────────────────────────────────────────── */
+    .stack-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+    }
+    .stack-header {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px;
+    }
+    .stack-header-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--stack);
+    }
+    .stack-header-label {
+      font-family: var(--mono);
+      font-size: 11px; font-weight: 700;
+      color: var(--stack);
+    }
+    .stack-depth {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+    }
+    .stack-slots {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 4px;
+      min-height: 200px;
+    }
+    .stack-token {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text);
+      position: relative;
+      animation: pushIn .28s cubic-bezier(.34,1.56,.64,1);
+      transition: background .3s, border-color .3s;
+    }
+    .stack-token.top {
+      background: var(--stack-bg);
+      border-color: var(--stack);
+      color: var(--stack);
+      font-weight: 700;
+    }
+    .stack-token .tok-idx {
+      position: absolute;
+      right: 8px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 9px;
+      color: var(--text3);
+    }
+    @keyframes pushIn {
+      from { opacity:0; transform: scaleY(.4) translateY(6px); }
+    }
+    .stack-empty {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text3);
+      padding: 8px 0;
+      text-align: center;
+    }
+    .stack-pointer {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 8px;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+    }
+    .stack-pointer span { color: var(--stack); }
+
+    /* ─── AGENTS PANEL ───────────────────────────────────────────── */
+    .agents-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .agent-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 18px;
+      transition: border-color .35s, background .35s;
+    }
+    .agent-card.active { background: var(--bg3); }
+    .agent-card[data-agent="claude"].active  { border-color: rgba(139,127,245,.4); }
+    .agent-card[data-agent="jules"].active   { border-color: rgba(240,112,68,.4); }
+    .agent-card[data-agent="stitch"].active  { border-color: rgba(77,163,245,.4); }
+
+    .agent-top {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 10px;
+    }
+    .agent-ava {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+      font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .agent-ava.claude { background: var(--claude-bg); color: var(--claude); }
+    .agent-ava.jules  { background: var(--jules-bg);  color: var(--jules); }
+    .agent-ava.stitch { background: var(--stitch-bg); color: var(--stitch); }
+
+    .agent-info-name {
+      font-size: 13px; font-weight: 700;
+    }
+    .agent-info-name.claude { color: var(--claude); }
+    .agent-info-name.jules  { color: var(--jules); }
+    .agent-info-name.stitch { color: var(--stitch); }
+
+    .agent-info-role {
+      font-size: 11px; color: var(--text2);
+    }
+    .agent-body {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.65;
+      color: var(--text2);
+      min-height: 22px;
+      transition: color .25s;
+      word-break: break-word;
+    }
+    .agent-card.active .agent-body { color: var(--text); }
+    .hl { display: inline-block; border-radius: 3px; padding: 0 4px; font-weight: 700; }
+    .hl-g { background: var(--stack-bg);  color: var(--stack); }
+    .hl-p { background: var(--claude-bg); color: var(--claude); }
+    .hl-o { background: var(--jules-bg);  color: var(--jules); }
+    .hl-b { background: var(--stitch-bg); color: var(--stitch); }
+
+    /* ─── BOTTOM ROW ─────────────────────────────────────────────── */
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* ─── LOG ────────────────────────────────────────────────────── */
+    .log-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+    }
+    .log-inner {
+      height: 180px;
+      overflow-y: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.7;
+    }
+    .log-inner::-webkit-scrollbar { width: 4px; }
+    .log-inner::-webkit-scrollbar-track { background: transparent; }
+    .log-inner::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+    .log-line { animation: fadeUp .2s ease; }
+    @keyframes fadeUp { from { opacity:0; transform: translateY(3px); } }
+    .log-line .ts { color: var(--text3); margin-right: 4px; }
+    .log-line.info  .msg { color: var(--stack); }
+    .log-line.claude .msg { color: var(--claude); }
+    .log-line.jules  .msg { color: var(--jules); }
+    .log-line.stitch .msg { color: var(--stitch); }
+    .log-line.done  .msg { color: #c0f0d8; }
+    .log-line.norm  .msg { color: var(--text2); }
+
+    /* ─── RESULT ─────────────────────────────────────────────────── */
+    .result-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    .result-output {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--stack);
+      min-height: 100px;
+      text-align: center;
+      word-break: break-word;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg3);
+      margin-top: 8px;
+      transition: color .4s;
+    }
+    .result-output.empty { color: var(--text3); font-size: 13px; font-weight: 400; }
+    .result-meta {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .result-tag {
+      font-size: 10px;
+      font-family: var(--mono);
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text2);
+    }
+
+    /* ─── PYTHON CODE SECTION ────────────────────────────────────── */
+    .code-section {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .code-tabs {
+      display: flex; gap: 0;
+    }
+    .code-tab {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 6px 14px;
+      background: transparent;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .2s;
+    }
+    .code-tab.active { color: var(--text); border-bottom-color: var(--stack); }
+    .copy-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 14px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text2);
+      cursor: pointer;
+      transition: color .2s, border-color .2s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--border2); }
+    .copy-btn.copied { color: var(--stack); border-color: var(--stack); }
+    .code-block {
+      padding: 20px 22px;
+      overflow-x: auto;
+      display: none;
+    }
+    .code-block.active { display: block; }
+    pre {
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.75;
+      color: var(--text);
+      white-space: pre;
+      tab-size: 4;
+    }
+    /* Syntax colors */
+    .kw  { color: #c678dd; }
+    .fn  { color: #61afef; }
+    .str { color: #98c379; }
+    .cm  { color: #5c6370; font-style: italic; }
+    .num { color: #d19a66; }
+    .cls { color: #e5c07b; }
+    .op  { color: #56b6c2; }
+    .ag-stack  { color: var(--stack); }
+    .ag-claude { color: var(--claude); }
+    .ag-jules  { color: var(--jules); }
+    .ag-stitch { color: var(--stitch); }
+
+    /* ─── FOOTER ─────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text3);
+    }
+    footer span { color: var(--text2); }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────────────── */
+    @media (max-width: 760px) {
+      header { padding: 14px 16px; }
+      main { padding: 20px 12px 40px; gap: 16px; }
+      .pipeline-grid { grid-template-columns: repeat(2, 1fr); }
+      .stage:nth-child(2) { border-right: none; }
+      .stage:nth-child(1),.stage:nth-child(2) { border-bottom: 1px solid var(--border); }
+      .middle-row { grid-template-columns: 1fr; }
+      .bottom-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── HEADER ──────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">LTP</div>
+    <div class="logo-text">
+      <h1>Language Translation Pipeline</h1>
+      <p>Stack · Claude · Jules · Stitch — Python Simulation</p>
+    </div>
+  </div>
+  <div class="header-badge">
+    <span>Python</span> · Programming Languages Subject
+  </div>
+</header>
+
+<!-- ─── MAIN ─────────────────────────────────────────────────────────── -->
+<main>
+
+  <!-- INPUT PANEL -->
+  <div class="input-panel">
+    <div class="section-label">Source Input</div>
+    <div class="input-row">
+      <input type="text" id="srcInput" value="Hello, how are you doing today?" placeholder="Enter any English phrase..." />
+      <select id="targetLang">
+        <option value="Spanish">→ Spanish</option>
+        <option value="French">→ French</option>
+        <option value="Japanese">→ Japanese</option>
+        <option value="German">→ German</option>
+        <option value="Python">→ Python 🐍</option>
+      </select>
+      <button class="run-btn"   id="runBtn"   onclick="runSimulation()">▶ Run Pipeline</button>
+      <button class="reset-btn" id="resetBtn" onclick="resetAll()">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- STEP PILLS -->
+  <div>
+    <div class="section-label">Pipeline Stages</div>
+    <div class="steps-row">
+      <div class="step-pill" id="pill0" data-color="stack">① Tokenize</div>
+      <div class="step-pill" id="pill1" data-color="stack">② Push to Stack</div>
+      <div class="step-pill" id="pill2" data-color="claude">③ Claude: Analyze</div>
+      <div class="step-pill" id="pill3" data-color="jules">④ Jules: Translate</div>
+      <div class="step-pill" id="pill4" data-color="stitch">⑤ Stitch: Assemble</div>
+      <div class="step-pill" id="pill5" data-color="stitch">⑥ Output Ready</div>
+    </div>
+  </div>
+
+  <!-- PIPELINE BAR -->
+  <div>
+    <div class="section-label">Active Agent</div>
+    <div class="pipeline-grid">
+      <div class="stage" id="stg0" data-agent="stack">
+        <div class="stage-indicator"></div>
+        <div class="stage-avatar stack">ST</div>
+        <div class="stage-name stack">Stack</div>
+        <div class="stage-desc">LIFO token buffer<br>push() · pop() · peek()</div>
+        <div class="stage-status"></div>
+      </div>
+      <div class="stage" id="stg1" data-agent="claude">
+        <div class="stage-indicator"></div>
+        <div class="stage-avatar claude">CL</div>
+        <div class="stage-name claude">Claude</div>
+        <div class="stage-desc">Semantic analysis<br>intent · sentiment · type</div>
+        <div class="stage-status"></div>
+      </div>
+      <div class="stage" id="stg2" data-agent="jules">
+        <div class="stage-indicator"></div>
+        <div class="stage-avatar jules">JU</div>
+        <div class="stage-name jules">Jules</div>
+        <div class="stage-desc">Lexical engine<br>dict lookup · mapping</div>
+        <div class="stage-status"></div>
+      </div>
+      <div class="stage" id="stg3" data-agent="stitch">
+        <div class="stage-indicator"></div>
+        <div class="stage-avatar stitch">SC</div>
+        <div class="stage-name stitch">Stitch</div>
+        <div class="stage-desc">Grammar assembler<br>SVO · punctuation · join</div>
+        <div class="stage-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MIDDLE ROW: STACK + AGENTS -->
+  <div class="middle-row">
+
+    <!-- STACK VISUAL -->
+    <div class="stack-box">
+      <div class="stack-header">
+        <div class="stack-header-dot"></div>
+        <div class="stack-header-label">Stack</div>
+        <div class="stack-depth" id="stackDepth">depth: 0</div>
+      </div>
+      <div class="stack-slots" id="stackSlots">
+        <div class="stack-empty">[ empty ]</div>
+      </div>
+      <div class="stack-pointer" id="stackPointer">
+        top → <span>None</span>
+      </div>
+    </div>
+
+    <!-- AGENT CARDS -->
+    <div class="agents-panel">
+
+      <div class="agent-card" id="cardClaude" data-agent="claude">
+        <div class="agent-top">
+          <div class="agent-ava claude">CL</div>
+          <div>
+            <div class="agent-info-name claude">Claude</div>
+            <div class="agent-info-role">Semantic Analysis Agent — reads token stream, detects intent &amp; structure</div>
+          </div>
+        </div>
+        <div class="agent-body" id="outClaude">Idle — waiting for token stream from Stack...</div>
+      </div>
+
+      <div class="agent-card" id="cardJules" data-agent="jules">
+        <div class="agent-top">
+          <div class="agent-ava jules">JU</div>
+          <div>
+            <div class="agent-info-name jules">Jules</div>
+            <div class="agent-info-role">Lexical Translation Engine — maps source tokens to target language</div>
+          </div>
+        </div>
+        <div class="agent-body" id="outJules">Idle — waiting for analysis from Claude...</div>
+      </div>
+
+      <div class="agent-card" id="cardStitch" data-agent="stitch">
+        <div class="agent-top">
+          <div class="agent-ava stitch">SC</div>
+          <div>
+            <div class="agent-info-name stitch">Stitch</div>
+            <div class="agent-info-role">Grammar &amp; Assembly Agent — joins translated tokens into final sentence</div>
+          </div>
+        </div>
+        <div class="agent-body" id="outStitch">Idle — waiting for translations from Jules...</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW: LOG + RESULT -->
+  <div class="bottom-row">
+
+    <div class="log-box">
+      <div class="section-label">Process Log</div>
+      <div class="log-inner" id="logPanel">
+        <div class="log-line norm"><span class="ts">[--:--:--]</span><span class="msg">Pipeline ready. Press ▶ Run Pipeline to start.</span></div>
+      </div>
+    </div>
+
+    <div class="result-box">
+      <div class="section-label">Final Output</div>
+      <div class="result-output empty" id="resultOutput">Awaiting pipeline...</div>
+      <div class="result-meta" id="resultMeta"></div>
+    </div>
+
+  </div>
+
+  <!-- PYTHON SOURCE CODE SECTION -->
+  <div class="code-section">
+    <div class="code-header">
+      <div class="code-tabs">
+        <button class="code-tab active" onclick="showTab('stack-py', this)">stack.py</button>
+        <button class="code-tab" onclick="showTab('agents-py', this)">agents.py</button>
+        <button class="code-tab" onclick="showTab('pipeline-py', this)">pipeline.py</button>
+        <button class="code-tab" onclick="showTab('main-py', this)">main.py</button>
+      </div>
+      <button class="copy-btn" id="copyBtn" onclick="copyCode()">Copy</button>
+    </div>
+
+    <!-- stack.py -->
+    <div class="code-block active" id="tab-stack-py">
+<pre><span class="cm"># stack.py — Stack data structure used as the token buffer in the pipeline</span>
+
+<span class="kw">class</span> <span class="ag-stack">Stack</span>:
+    <span class="str">"""
+    LIFO Stack — Last-In, First-Out token memory buffer.
+    Stores tokenized words before processing by translation agents.
+    """</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="cls">self</span>):
+        <span class="cls">self</span>._data: <span class="fn">list</span>[<span class="fn">str</span>] = []
+
+    <span class="kw">def</span> <span class="fn">push</span>(<span class="cls">self</span>, token: <span class="fn">str</span>) <span class="op">-></span> <span class="kw">None</span>:
+        <span class="str">"""Push a token onto the top of the stack."""</span>
+        <span class="cls">self</span>._data.append(token)
+
+    <span class="kw">def</span> <span class="fn">pop</span>(<span class="cls">self</span>) <span class="op">-></span> <span class="fn">str</span>:
+        <span class="str">"""Remove and return the top token (LIFO order)."""</span>
+        <span class="kw">if</span> <span class="cls">self</span>.<span class="fn">is_empty</span>():
+            <span class="kw">raise</span> <span class="cls">IndexError</span>(<span class="str">"pop from empty Stack"</span>)
+        <span class="kw">return</span> <span class="cls">self</span>._data.pop()
+
+    <span class="kw">def</span> <span class="fn">peek</span>(<span class="cls">self</span>) <span class="op">-></span> <span class="fn">str</span> <span class="op">|</span> <span class="kw">None</span>:
+        <span class="str">"""Return the top token without removing it."""</span>
+        <span class="kw">return</span> <span class="cls">self</span>._data[<span class="op">-</span><span class="num">1</span>] <span class="kw">if</span> <span class="cls">self</span>._data <span class="kw">else</span> <span class="kw">None</span>
+
+    <span class="kw">def</span> <span class="fn">is_empty</span>(<span class="cls">self</span>) <span class="op">-></span> <span class="fn">bool</span>:
+        <span class="kw">return</span> <span class="fn">len</span>(<span class="cls">self</span>._data) <span class="op">==</span> <span class="num">0</span>
+
+    <span class="kw">def</span> <span class="fn">depth</span>(<span class="cls">self</span>) <span class="op">-></span> <span class="fn">int</span>:
+        <span class="kw">return</span> <span class="fn">len</span>(<span class="cls">self</span>._data)
+
+    <span class="kw">def</span> <span class="fn">drain</span>(<span class="cls">self</span>) <span class="op">-></span> <span class="fn">list</span>[<span class="fn">str</span>]:
+        <span class="str">"""Pop all tokens from stack in LIFO order."""</span>
+        result = []
+        <span class="kw">while not</span> <span class="cls">self</span>.<span class="fn">is_empty</span>():
+            result.append(<span class="cls">self</span>.<span class="fn">pop</span>())
+        <span class="kw">return</span> result
+
+    <span class="kw">def</span> <span class="fn">__repr__</span>(<span class="cls">self</span>) <span class="op">-></span> <span class="fn">str</span>:
+        <span class="kw">return</span> <span class="str">f"Stack(depth=</span>{<span class="cls">self</span>.<span class="fn">depth</span>()}<span class="str">, top=</span>{<span class="cls">self</span>.<span class="fn">peek</span>()!r}<span class="str">)"</span>
+
+
+<span class="kw">def</span> <span class="fn">tokenize</span>(text: <span class="fn">str</span>) <span class="op">-></span> <span class="fn">list</span>[<span class="fn">str</span>]:
+    <span class="str">"""
+    Tokenize a sentence into clean word tokens.
+    Strips punctuation and splits on whitespace.
+    """</span>
+    <span class="kw">import</span> re
+    cleaned = re.<span class="fn">sub</span>(<span class="str">r"[^\w\s]"</span>, <span class="str">""</span>, text)
+    <span class="kw">return</span> [tok <span class="kw">for</span> tok <span class="kw">in</span> cleaned.<span class="fn">split</span>() <span class="kw">if</span> tok]
+</pre>
+    </div>
+
+    <!-- agents.py -->
+    <div class="code-block" id="tab-agents-py">
+<pre><span class="cm"># agents.py — Claude, Jules, and Stitch translation agents</span>
+
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field
+<span class="kw">from</span> stack <span class="kw">import</span> Stack
+
+
+<span class="cm"># ── Translation Dictionaries ──────────────────────────────────────────</span>
+
+LEXICON: <span class="fn">dict</span>[<span class="fn">str</span>, <span class="fn">dict</span>[<span class="fn">str</span>, <span class="fn">str</span>]] = {
+    <span class="str">"Spanish"</span>: {
+        <span class="str">"Hello"</span>: <span class="str">"Hola"</span>, <span class="str">"how"</span>: <span class="str">"cómo"</span>, <span class="str">"are"</span>: <span class="str">"estás"</span>, <span class="str">"you"</span>: <span class="str">"tú"</span>,
+        <span class="str">"doing"</span>: <span class="str">"haciendo"</span>, <span class="str">"today"</span>: <span class="str">"hoy"</span>, <span class="str">"good"</span>: <span class="str">"bueno"</span>, <span class="str">"morning"</span>: <span class="str">"mañana"</span>,
+        <span class="str">"thank"</span>: <span class="str">"gracias"</span>, <span class="str">"goodbye"</span>: <span class="str">"adiós"</span>, <span class="str">"world"</span>: <span class="str">"mundo"</span>,
+        <span class="str">"I"</span>: <span class="str">"yo"</span>, <span class="str">"love"</span>: <span class="str">"amo"</span>, <span class="str">"programming"</span>: <span class="str">"programación"</span>,
+        <span class="str">"language"</span>: <span class="str">"idioma"</span>, <span class="str">"is"</span>: <span class="str">"es"</span>, <span class="str">"fun"</span>: <span class="str">"divertido"</span>,
+        <span class="str">"What"</span>: <span class="str">"Qué"</span>, <span class="str">"your"</span>: <span class="str">"tu"</span>, <span class="str">"name"</span>: <span class="str">"nombre"</span>,
+        <span class="str">"My"</span>: <span class="str">"Mi"</span>, <span class="str">"we"</span>: <span class="str">"nosotros"</span>, <span class="str">"learn"</span>: <span class="str">"aprender"</span>,
+    },
+    <span class="str">"French"</span>: {
+        <span class="str">"Hello"</span>: <span class="str">"Bonjour"</span>, <span class="str">"how"</span>: <span class="str">"comment"</span>, <span class="str">"are"</span>: <span class="str">"allez"</span>, <span class="str">"you"</span>: <span class="str">"vous"</span>,
+        <span class="str">"doing"</span>: <span class="str">"faisant"</span>, <span class="str">"today"</span>: <span class="str">"aujourd'hui"</span>, <span class="str">"good"</span>: <span class="str">"bon"</span>,
+        <span class="str">"morning"</span>: <span class="str">"matin"</span>, <span class="str">"thank"</span>: <span class="str">"merci"</span>, <span class="str">"goodbye"</span>: <span class="str">"au revoir"</span>,
+        <span class="str">"world"</span>: <span class="str">"monde"</span>, <span class="str">"I"</span>: <span class="str">"je"</span>, <span class="str">"love"</span>: <span class="str">"aime"</span>,
+        <span class="str">"programming"</span>: <span class="str">"programmation"</span>, <span class="str">"language"</span>: <span class="str">"langue"</span>,
+        <span class="str">"is"</span>: <span class="str">"est"</span>, <span class="str">"fun"</span>: <span class="str">"amusant"</span>, <span class="str">"What"</span>: <span class="str">"Quel"</span>,
+        <span class="str">"your"</span>: <span class="str">"votre"</span>, <span class="str">"name"</span>: <span class="str">"nom"</span>, <span class="str">"My"</span>: <span class="str">"Mon"</span>,
+    },
+    <span class="str">"Japanese"</span>: {
+        <span class="str">"Hello"</span>: <span class="str">"こんにちは"</span>, <span class="str">"how"</span>: <span class="str">"どのように"</span>, <span class="str">"are"</span>: <span class="str">"いる"</span>,
+        <span class="str">"you"</span>: <span class="str">"あなた"</span>, <span class="str">"doing"</span>: <span class="str">"している"</span>, <span class="str">"today"</span>: <span class="str">"今日"</span>,
+        <span class="str">"good"</span>: <span class="str">"良い"</span>, <span class="str">"morning"</span>: <span class="str">"朝"</span>, <span class="str">"thank"</span>: <span class="str">"ありがとう"</span>,
+        <span class="str">"goodbye"</span>: <span class="str">"さようなら"</span>, <span class="str">"world"</span>: <span class="str">"世界"</span>, <span class="str">"I"</span>: <span class="str">"私"</span>,
+        <span class="str">"love"</span>: <span class="str">"大好き"</span>, <span class="str">"programming"</span>: <span class="str">"プログラミング"</span>,
+        <span class="str">"language"</span>: <span class="str">"言語"</span>, <span class="str">"is"</span>: <span class="str">"です"</span>, <span class="str">"fun"</span>: <span class="str">"楽しい"</span>,
+        <span class="str">"What"</span>: <span class="str">"何"</span>, <span class="str">"your"</span>: <span class="str">"あなたの"</span>, <span class="str">"name"</span>: <span class="str">"名前"</span>, <span class="str">"My"</span>: <span class="str">"私の"</span>,
+    },
+    <span class="str">"German"</span>: {
+        <span class="str">"Hello"</span>: <span class="str">"Hallo"</span>, <span class="str">"how"</span>: <span class="str">"wie"</span>, <span class="str">"are"</span>: <span class="str">"bist"</span>, <span class="str">"you"</span>: <span class="str">"du"</span>,
+        <span class="str">"doing"</span>: <span class="str">"machst"</span>, <span class="str">"today"</span>: <span class="str">"heute"</span>, <span class="str">"good"</span>: <span class="str">"gut"</span>,
+        <span class="str">"morning"</span>: <span class="str">"Morgen"</span>, <span class="str">"thank"</span>: <span class="str">"danke"</span>,
+        <span class="str">"goodbye"</span>: <span class="str">"Auf Wiedersehen"</span>, <span class="str">"world"</span>: <span class="str">"Welt"</span>,
+        <span class="str">"I"</span>: <span class="str">"ich"</span>, <span class="str">"love"</span>: <span class="str">"liebe"</span>, <span class="str">"programming"</span>: <span class="str">"Programmierung"</span>,
+        <span class="str">"language"</span>: <span class="str">"Sprache"</span>, <span class="str">"is"</span>: <span class="str">"ist"</span>, <span class="str">"fun"</span>: <span class="str">"Spaß"</span>,
+        <span class="str">"What"</span>: <span class="str">"Was"</span>, <span class="str">"your"</span>: <span class="str">"dein"</span>, <span class="str">"name"</span>: <span class="str">"Name"</span>, <span class="str">"My"</span>: <span class="str">"Mein"</span>,
+    },
+}
+
+
+<span class="cm"># ── Analysis Result Dataclass ─────────────────────────────────────────</span>
+
+<span class="op">@</span><span class="fn">dataclass</span>
+<span class="kw">class</span> <span class="cls">Analysis</span>:
+    tokens: <span class="fn">list</span>[<span class="fn">str</span>]
+    sentence_type: <span class="fn">str</span>   <span class="cm"># "interrogative" | "declarative" | "exclamatory"</span>
+    sentiment: <span class="fn">str</span>        <span class="cm"># "positive" | "neutral" | "negative"</span>
+    word_count: <span class="fn">int</span>
+    intent: <span class="fn">str</span>
+    raw_text: <span class="fn">str</span>
+
+
+<span class="cm"># ── CLAUDE — Semantic Analysis Agent ──────────────────────────────────</span>
+
+<span class="kw">class</span> <span class="ag-claude">Claude</span>:
+    <span class="str">"""
+    Claude reads the full token stream from the Stack and performs
+    semantic analysis: detecting sentence type, sentiment, and intent.
+    This metadata helps Jules choose the correct translation register.
+    """</span>
+
+    POSITIVE_WORDS = {<span class="str">"love"</span>, <span class="str">"great"</span>, <span class="str">"good"</span>, <span class="str">"fun"</span>, <span class="str">"happy"</span>, <span class="str">"wonderful"</span>}
+    NEGATIVE_WORDS = {<span class="str">"bad"</span>, <span class="str">"hate"</span>, <span class="str">"terrible"</span>, <span class="str">"awful"</span>, <span class="str">"horrible"</span>}
+
+    <span class="kw">def</span> <span class="fn">analyze</span>(<span class="cls">self</span>, tokens: <span class="fn">list</span>[<span class="fn">str</span>], raw_text: <span class="fn">str</span>) <span class="op">-></span> <span class="cls">Analysis</span>:
+        <span class="str">"""Perform semantic analysis on the token stream."""</span>
+        lower = {t.<span class="fn">lower</span>() <span class="kw">for</span> t <span class="kw">in</span> tokens}
+
+        <span class="cm"># Determine sentence type</span>
+        <span class="kw">if</span> raw_text.<span class="fn">rstrip</span>().<span class="fn">endswith</span>(<span class="str">"?"</span>):
+            stype = <span class="str">"interrogative"</span>
+        <span class="kw">elif</span> raw_text.<span class="fn">rstrip</span>().<span class="fn">endswith</span>(<span class="str">"!"</span>):
+            stype = <span class="str">"exclamatory"</span>
+        <span class="kw">else</span>:
+            stype = <span class="str">"declarative"</span>
+
+        <span class="cm"># Detect sentiment</span>
+        <span class="kw">if</span> lower <span class="op">&</span> <span class="cls">self</span>.POSITIVE_WORDS:
+            sentiment = <span class="str">"positive"</span>
+        <span class="kw">elif</span> lower <span class="op">&</span> <span class="cls">self</span>.NEGATIVE_WORDS:
+            sentiment = <span class="str">"negative"</span>
+        <span class="kw">else</span>:
+            sentiment = <span class="str">"neutral"</span>
+
+        <span class="cm"># Infer intent</span>
+        greetings = {<span class="str">"hello"</span>, <span class="str">"hi"</span>, <span class="str">"hey"</span>, <span class="str">"good"</span>, <span class="str">"morning"</span>}
+        <span class="kw">if</span> lower <span class="op">&</span> greetings:
+            intent = <span class="str">"greeting"</span>
+        <span class="kw">elif</span> stype <span class="op">==</span> <span class="str">"interrogative"</span>:
+            intent = <span class="str">"question"</span>
+        <span class="kw">else</span>:
+            intent = <span class="str">"statement"</span>
+
+        <span class="kw">return</span> <span class="cls">Analysis</span>(
+            tokens=tokens,
+            sentence_type=stype,
+            sentiment=sentiment,
+            word_count=<span class="fn">len</span>(tokens),
+            intent=intent,
+            raw_text=raw_text,
+        )
+
+
+<span class="cm"># ── JULES — Lexical Translation Engine ────────────────────────────────</span>
+
+<span class="kw">class</span> <span class="ag-jules">Jules</span>:
+    <span class="str">"""
+    Jules pops each token from the Stack (LIFO), looks it up in the
+    language lexicon, and produces the translated token list.
+    Tokens not found in the lexicon are wrapped in brackets.
+    """</span>
+
+    <span class="kw">def</span> <span class="fn">translate</span>(<span class="cls">self</span>, stack: <span class="cls">Stack</span>, target_lang: <span class="fn">str</span>) <span class="op">-></span> <span class="fn">list</span>[<span class="fn">str</span>]:
+        <span class="str">"""Drain the stack and translate each token."""</span>
+        dictionary = LEXICON.<span class="fn">get</span>(target_lang, {})
+        popped_tokens: <span class="fn">list</span>[<span class="fn">str</span>] = stack.<span class="fn">drain</span>()  <span class="cm"># LIFO order</span>
+        translated: <span class="fn">list</span>[<span class="fn">str</span>] = []
+
+        <span class="kw">for</span> token <span class="kw">in</span> <span class="fn">reversed</span>(popped_tokens):  <span class="cm"># restore original order</span>
+            key = token[<span class="num">0</span>].<span class="fn">upper</span>() + token[<span class="num">1</span>:]  <span class="cm"># try capitalized first</span>
+            result = (
+                dictionary.<span class="fn">get</span>(token)
+                <span class="kw">or</span> dictionary.<span class="fn">get</span>(key)
+                <span class="kw">or</span> dictionary.<span class="fn">get</span>(token.<span class="fn">lower</span>())
+                <span class="kw">or</span> <span class="str">f"[{token}]"</span>
+            )
+            translated.<span class="fn">append</span>(result)
+
+        <span class="kw">return</span> translated
+
+    <span class="kw">def</span> <span class="fn">coverage</span>(<span class="cls">self</span>, tokens: <span class="fn">list</span>[<span class="fn">str</span>], translated: <span class="fn">list</span>[<span class="fn">str</span>]) <span class="op">-></span> <span class="fn">float</span>:
+        <span class="str">"""Return what fraction of tokens were found in the lexicon."""</span>
+        known = <span class="fn">sum</span>(<span class="num">1</span> <span class="kw">for</span> t <span class="kw">in</span> translated <span class="kw">if not</span> t.<span class="fn">startswith</span>(<span class="str">"["</span>))
+        <span class="kw">return</span> known / <span class="fn">len</span>(tokens) <span class="kw">if</span> tokens <span class="kw">else</span> <span class="num">0.0</span>
+
+
+<span class="cm"># ── STITCH — Grammar & Assembly Agent ─────────────────────────────────</span>
+
+<span class="kw">class</span> <span class="ag-stitch">Stitch</span>:
+    <span class="str">"""
+    Stitch receives the translated token list and an Analysis object,
+    then reassembles the tokens into a grammatically correct sentence.
+    It restores punctuation and capitalizes the output.
+    """</span>
+
+    <span class="kw">def</span> <span class="fn">assemble</span>(<span class="cls">self</span>, translated: <span class="fn">list</span>[<span class="fn">str</span>], analysis: <span class="cls">Analysis</span>) <span class="op">-></span> <span class="fn">str</span>:
+        <span class="str">"""Join translated tokens and apply grammar rules."""</span>
+        <span class="kw">if not</span> translated:
+            <span class="kw">return</span> <span class="str">""</span>
+
+        sentence = <span class="str">" "</span>.<span class="fn">join</span>(translated)
+
+        <span class="cm"># Restore terminal punctuation</span>
+        punctuation_map = {
+            <span class="str">"interrogative"</span>: <span class="str">"?"</span>,
+            <span class="str">"exclamatory"</span>:   <span class="str">"!"</span>,
+            <span class="str">"declarative"</span>:   <span class="str">"."</span>,
+        }
+        sentence += punctuation_map.<span class="fn">get</span>(analysis.sentence_type, <span class="str">"."</span>)
+
+        <span class="cm"># Capitalize first character</span>
+        sentence = sentence[<span class="num">0</span>].<span class="fn">upper</span>() + sentence[<span class="num">1</span>:]
+
+        <span class="kw">return</span> sentence
+</pre>
+    </div>
+
+    <!-- pipeline.py -->
+    <div class="code-block" id="tab-pipeline-py">
+<pre><span class="cm"># pipeline.py — Orchestrates the full translation pipeline</span>
+
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+<span class="kw">from</span> stack   <span class="kw">import</span> Stack, tokenize
+<span class="kw">from</span> agents  <span class="kw">import</span> Claude, Jules, Stitch, Analysis
+
+
+<span class="op">@</span><span class="fn">dataclass</span>
+<span class="kw">class</span> <span class="cls">PipelineResult</span>:
+    source_text:   <span class="fn">str</span>
+    target_lang:   <span class="fn">str</span>
+    tokens:        <span class="fn">list</span>[<span class="fn">str</span>]
+    analysis:      <span class="cls">Analysis</span>
+    translated:    <span class="fn">list</span>[<span class="fn">str</span>]
+    output:        <span class="fn">str</span>
+    coverage:      <span class="fn">float</span>
+
+
+<span class="kw">class</span> <span class="cls">TranslationPipeline</span>:
+    <span class="str">"""
+    Orchestrates all four components of the translation process:
+
+        ┌────────┐    push()    ┌────────┐
+        │ Input  │ ──────────► │ Stack  │
+        └────────┘             └────┬───┘
+                                    │  stream tokens
+                               ┌────▼────┐
+                               │ Claude  │  semantic analysis
+                               └────┬────┘
+                                    │  Analysis object
+                               ┌────▼────┐
+                               │  Jules  │  lexical translation
+                               └────┬────┘
+                                    │  translated tokens
+                               ┌────▼────┐
+                               │ Stitch  │  grammar & assembly
+                               └────┬────┘
+                                    │
+                               ┌────▼────┐
+                               │ Output  │
+                               └─────────┘
+    """</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="cls">self</span>):
+        <span class="cls">self</span>.stack  = <span class="ag-stack">Stack</span>()
+        <span class="cls">self</span>.claude = <span class="ag-claude">Claude</span>()
+        <span class="cls">self</span>.jules  = <span class="ag-jules">Jules</span>()
+        <span class="cls">self</span>.stitch = <span class="ag-stitch">Stitch</span>()
+
+    <span class="kw">def</span> <span class="fn">run</span>(<span class="cls">self</span>, source_text: <span class="fn">str</span>, target_lang: <span class="fn">str</span>) <span class="op">-></span> <span class="cls">PipelineResult</span>:
+        <span class="str">"""Execute the full translation pipeline."""</span>
+
+        <span class="cm"># ── Stage 1: Tokenize ──────────────────────────────────────────</span>
+        <span class="fn">print</span>(<span class="str">f"\n[Stack]  Tokenizing: {source_text!r}"</span>)
+        tokens = <span class="fn">tokenize</span>(source_text)
+
+        <span class="cm"># ── Stage 2: Push to Stack ─────────────────────────────────────</span>
+        <span class="kw">for</span> token <span class="kw">in</span> tokens:
+            <span class="cls">self</span>.stack.<span class="fn">push</span>(token)
+            <span class="fn">print</span>(<span class="str">f"[Stack]  push({token!r}) → depth={</span><span class="cls">self</span>.stack.<span class="fn">depth</span>()<span class="str">}"</span>)
+
+        <span class="cm"># ── Stage 3: Claude analyzes ───────────────────────────────────</span>
+        analysis = <span class="cls">self</span>.claude.<span class="fn">analyze</span>(tokens, source_text)
+        <span class="fn">print</span>(<span class="str">f"\n[Claude] type={analysis.sentence_type}, "</span>
+              <span class="str">f"sentiment={analysis.sentiment}, intent={analysis.intent}"</span>)
+
+        <span class="cm"># ── Stage 4: Jules translates ──────────────────────────────────</span>
+        translated = <span class="cls">self</span>.jules.<span class="fn">translate</span>(<span class="cls">self</span>.stack, target_lang)
+        coverage   = <span class="cls">self</span>.jules.<span class="fn">coverage</span>(tokens, translated)
+        <span class="fn">print</span>(<span class="str">f"\n[Jules]  {tokens} → {translated}"</span>)
+        <span class="fn">print</span>(<span class="str">f"[Jules]  Coverage: {coverage:.0%}"</span>)
+
+        <span class="cm"># ── Stage 5: Stitch assembles ──────────────────────────────────</span>
+        output = <span class="cls">self</span>.stitch.<span class="fn">assemble</span>(translated, analysis)
+        <span class="fn">print</span>(<span class="str">f"\n[Stitch] Output: {output!r}"</span>)
+
+        <span class="kw">return</span> <span class="cls">PipelineResult</span>(
+            source_text=source_text,
+            target_lang=target_lang,
+            tokens=tokens,
+            analysis=analysis,
+            translated=translated,
+            output=output,
+            coverage=coverage,
+        )
+</pre>
+    </div>
+
+    <!-- main.py -->
+    <div class="code-block" id="tab-main-py">
+<pre><span class="cm"># main.py — Entry point: run the Language Translation Pipeline</span>
+
+<span class="kw">from</span> pipeline <span class="kw">import</span> TranslationPipeline
+
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    pipeline = <span class="cls">TranslationPipeline</span>()
+
+    <span class="cm"># ── Test phrases ───────────────────────────────────────────────────</span>
+    test_cases = [
+        (<span class="str">"Hello, how are you doing today?"</span>, <span class="str">"Spanish"</span>),
+        (<span class="str">"Good morning world!"</span>,              <span class="str">"French"</span>),
+        (<span class="str">"I love programming language"</span>,      <span class="str">"Japanese"</span>),
+        (<span class="str">"What is your name?"</span>,               <span class="str">"German"</span>),
+    ]
+
+    <span class="fn">print</span>(<span class="str">"=" * 60</span>)
+    <span class="fn">print</span>(<span class="str">"  Language Translation Pipeline"</span>)
+    <span class="fn">print</span>(<span class="str">"  Stack · Claude · Jules · Stitch"</span>)
+    <span class="fn">print</span>(<span class="str">"=" * 60</span>)
+
+    <span class="kw">for</span> source, lang <span class="kw">in</span> test_cases:
+        <span class="fn">print</span>(<span class="str">f"\n{'─'*60}"</span>)
+        <span class="fn">print</span>(<span class="str">f"Source ({lang}): {source}"</span>)
+        <span class="fn">print</span>(<span class="str">"─" * 60</span>)
+
+        result = pipeline.<span class="fn">run</span>(source, lang)
+
+        <span class="fn">print</span>(<span class="str">f"\n✓ Result : {result.output}"</span>)
+        <span class="fn">print</span>(<span class="str">f"  Tokens : {result.tokens}"</span>)
+        <span class="fn">print</span>(<span class="str">f"  Intent : {result.analysis.intent}"</span>)
+        <span class="fn">print</span>(<span class="str">f"  Coverage: {result.coverage:.0%}"</span>)
+
+
+<span class="kw">if</span> __name__ <span class="op">==</span> <span class="str">"__main__"</span>:
+    <span class="fn">main</span>()
+</pre>
+    </div>
+
+  </div><!-- /code-section -->
+
+</main>
+
+<!-- ─── FOOTER ──────────────────────────────────────────────────────── -->
+<footer>
+  <span>Language Translation Pipeline</span> — Programming Languages Subject
+  <span>Stack · Claude · Jules · Stitch · Python</span>
+</footer>
+
+
+<!-- ─── JAVASCRIPT ──────────────────────────────────────────────────── -->
+<script>
+/* ── Translation Data ───────────────────────────────────────────────── */
+const TRANSLATIONS = {
+  Spanish: {
+    "Hello":"Hola","how":"cómo","are":"estás","you":"tú","doing":"haciendo",
+    "today":"hoy","good":"bueno","morning":"mañana","thank":"gracias",
+    "goodbye":"adiós","world":"mundo","I":"yo","love":"amo",
+    "programming":"programación","language":"idioma","is":"es","fun":"divertido",
+    "What":"Qué","your":"tu","name":"nombre","My":"Mi","we":"nosotros","learn":"aprender"
+  },
+  French: {
+    "Hello":"Bonjour","how":"comment","are":"allez","you":"vous","doing":"faisant",
+    "today":"aujourd'hui","good":"bon","morning":"matin","thank":"merci",
+    "goodbye":"au revoir","world":"monde","I":"je","love":"aime",
+    "programming":"programmation","language":"langue","is":"est","fun":"amusant",
+    "What":"Quel","your":"votre","name":"nom","My":"Mon"
+  },
+  Japanese: {
+    "Hello":"こんにちは","how":"どのように","are":"いる","you":"あなた",
+    "doing":"している","today":"今日","good":"良い","morning":"朝","thank":"ありがとう",
+    "goodbye":"さようなら","world":"世界","I":"私","love":"大好き",
+    "programming":"プログラミング","language":"言語","is":"です","fun":"楽しい",
+    "What":"何","your":"あなたの","name":"名前","My":"私の"
+  },
+  German: {
+    "Hello":"Hallo","how":"wie","are":"bist","you":"du","doing":"machst",
+    "today":"heute","good":"gut","morning":"Morgen","thank":"danke",
+    "goodbye":"Auf Wiedersehen","world":"Welt","I":"ich","love":"liebe",
+    "programming":"Programmierung","language":"Sprache","is":"ist","fun":"Spaß",
+    "What":"Was","your":"dein","name":"Name","My":"Mein"
+  },
+  Python: {
+    "Hello":"print('Hello')","how":"def how():","are":"assert","you":"self",
+    "doing":"return","today":"datetime.today()","good":"True","morning":"time.sleep(0)",
+    "thank":"# thank","goodbye":"sys.exit(0)","world":"['world']",
+    "I":"self","love":"lambda:","programming":"class Code:","language":"lang = str",
+    "is":"==","fun":"True","What":"input()","your":"self.","name":"__name__","My":"self."
+  }
+};
+
+let running = false;
+
+/* ── Helpers ────────────────────────────────────────────────────────── */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function ts() {
+  return new Date().toLocaleTimeString('en', {hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function addLog(msg, cls='norm') {
+  const p = document.getElementById('logPanel');
+  const d = document.createElement('div');
+  d.className = 'log-line ' + cls;
+  d.innerHTML = `<span class="ts">[${ts()}]</span><span class="msg"> ${msg}</span>`;
+  p.appendChild(d);
+  p.scrollTop = p.scrollHeight;
+}
+
+function setPill(i, state) {
+  const el = document.getElementById('pill'+i);
+  el.className = 'step-pill ' + state + (el.dataset.color ? '' : '');
+  if(state === 'active') el.classList.add('active');
+}
+
+function setStage(idx) {
+  for(let i=0;i<4;i++) document.getElementById('stg'+i).classList.remove('active');
+  if(idx>=0) document.getElementById('stg'+idx).classList.add('active');
+}
+
+function renderStack(stack) {
+  const el = document.getElementById('stackSlots');
+  const dep = document.getElementById('stackDepth');
+  const ptr = document.getElementById('stackPointer');
+  dep.textContent = 'depth: ' + stack.length;
+  if(!stack.length) {
+    el.innerHTML = '<div class="stack-empty">[ empty ]</div>';
+    ptr.innerHTML = 'top → <span>None</span>';
+    return;
+  }
+  el.innerHTML = stack.map((t,i) =>
+    `<div class="stack-token ${i===stack.length-1?'top':''}">
+      ${t}<span class="tok-idx">${i}</span>
+    </div>`
+  ).join('');
+  ptr.innerHTML = `top → <span>${stack[stack.length-1]}</span>`;
+}
+
+function setAgent(id, active) {
+  document.getElementById(id).classList.toggle('active', active);
+}
+
+function setOutput(id, html) {
+  document.getElementById(id).innerHTML = html;
+}
+
+/* ── Main Simulation ────────────────────────────────────────────────── */
+async function runSimulation() {
+  if(running) return;
+  running = true;
+  document.getElementById('runBtn').disabled = true;
+
+  const src  = document.getElementById('srcInput').value.trim();
+  const lang = document.getElementById('targetLang').value;
+
+  if(!src) { running=false; document.getElementById('runBtn').disabled=false; return; }
+
+  /* reset UI */
+  document.getElementById('logPanel').innerHTML = '';
+  const ro = document.getElementById('resultOutput');
+  ro.textContent = 'Awaiting pipeline...';
+  ro.className = 'result-output empty';
+  document.getElementById('resultMeta').innerHTML = '';
+  ['cardClaude','cardJules','cardStitch'].forEach(id => setAgent(id, false));
+  for(let i=0;i<6;i++) { const p=document.getElementById('pill'+i); p.className='step-pill'; p.style.background=''; }
+  setStage(-1);
+  renderStack([]);
+  setOutput('outClaude','Idle — waiting for token stream from Stack...');
+  setOutput('outJules','Idle — waiting for analysis from Claude...');
+  setOutput('outStitch','Idle — waiting for translations from Jules...');
+
+  /* ─ Stage 1: Tokenize ─ */
+  setPill(0,'active'); setStage(0);
+  addLog('Stack.tokenize() — splitting input...', 'info');
+  await sleep(500);
+
+  const tokens = src.replace(/[.,!?;:]/g,'').split(' ').filter(Boolean);
+  addLog(`Stack: ${tokens.length} tokens → [${tokens.join(', ')}]`, 'info');
+  await sleep(300);
+
+  /* ─ Stage 2: Push to Stack ─ */
+  setPill(0,'done'); setPill(1,'active');
+  const stack = [];
+  for(const tok of tokens) {
+    stack.push(tok);
+    renderStack(stack);
+    addLog(`Stack.push("${tok}") → depth=${stack.length}`, 'norm');
+    await sleep(160);
+  }
+  addLog(`Stack full — ${stack.length} items buffered`, 'info');
+  await sleep(400);
+
+  /* ─ Stage 3: Claude ─ */
+  setPill(1,'done'); setPill(2,'active'); setStage(1);
+  setAgent('cardClaude', true);
+  addLog('Claude: Receiving token stream from Stack...', 'claude');
+  await sleep(450);
+
+  const lower = tokens.map(t=>t.toLowerCase());
+  const posWords = ['love','great','good','fun','happy','wonderful'];
+  const negWords = ['bad','hate','terrible','awful','horrible'];
+  const sentiment = lower.some(w=>posWords.includes(w)) ? 'positive'
+                  : lower.some(w=>negWords.includes(w)) ? 'negative' : 'neutral';
+  const stype = src.trim().endsWith('?') ? 'interrogative'
+              : src.trim().endsWith('!') ? 'exclamatory' : 'declarative';
+  const greet = ['hello','hi','hey','good','morning'];
+  const intent = lower.some(w=>greet.includes(w)) ? 'greeting'
+               : stype==='interrogative' ? 'question' : 'statement';
+
+  setOutput('outClaude',
+    `tokens=<span class="hl hl-b">${tokens.length}</span> &nbsp;` +
+    `sentiment=<span class="hl hl-g">${sentiment}</span> &nbsp;` +
+    `type=<span class="hl hl-p">${stype}</span><br>` +
+    `intent=<span class="hl hl-o">${intent}</span> &nbsp;complexity=simple`
+  );
+  addLog(`Claude: type=${stype}, sentiment=${sentiment}, intent=${intent}`, 'claude');
+  await sleep(700);
+
+  /* ─ Stage 4: Jules ─ */
+  setPill(2,'done'); setPill(3,'active'); setStage(2);
+  setAgent('cardClaude', false); setAgent('cardJules', true);
+  addLog(`Jules: Translating ${tokens.length} tokens → ${lang}...`, 'jules');
+  await sleep(400);
+
+  const dict = TRANSLATIONS[lang] || {};
+  const translated = [];
+  const stackCopy = [...stack];
+  for(let i=stackCopy.length-1; i>=0; i--) {
+    const tok = stackCopy[i];
+    stack.pop();
+    renderStack(stack);
+    const key = tok[0].toUpperCase() + tok.slice(1);
+    const tr = dict[tok] || dict[key] || dict[tok.toLowerCase()] || `[${tok}]`;
+    translated.unshift(tr);
+    addLog(`Jules: "${tok}" → "${tr}"`, 'norm');
+    await sleep(130);
+  }
+  renderStack([]);
+
+  const known = translated.filter(t=>!t.startsWith('[')).length;
+  const cov   = Math.round(known/tokens.length*100);
+  setOutput('outJules',
+    `Lexicon: <span class="hl hl-o">${Object.keys(dict).length}</span> entries &nbsp;` +
+    `coverage: <span class="hl hl-g">${cov}%</span><br>` +
+    `translated: [${translated.slice(0,5).join(', ')}${translated.length>5?', …':''}]`
+  );
+  addLog(`Jules: Translation pass complete (${cov}% coverage)`, 'jules');
+  await sleep(500);
+
+  /* ─ Stage 5: Stitch ─ */
+  setPill(3,'done'); setPill(4,'active'); setStage(3);
+  setAgent('cardJules', false); setAgent('cardStitch', true);
+  addLog('Stitch: Assembling grammar structure...', 'stitch');
+  await sleep(400);
+
+  let assembled = translated.join(' ');
+  const punct = stype==='interrogative'?'?':stype==='exclamatory'?'!':'.';
+  assembled += punct;
+  assembled = assembled[0].toUpperCase() + assembled.slice(1);
+
+  setOutput('outStitch',
+    `Stitched <span class="hl hl-b">${translated.length}</span> tokens<br>` +
+    `Rule: SVO + terminal punctuation (<span class="hl hl-b">"${punct}"</span>)<br>` +
+    `<span class="hl hl-g">${assembled}</span>`
+  );
+  addLog(`Stitch: Output ready — "${assembled.slice(0,40)}${assembled.length>40?'…':''}"`, 'stitch');
+  await sleep(600);
+
+  /* ─ Stage 6: Output ─ */
+  setPill(4,'done'); setPill(5,'active'); setStage(-1);
+  setAgent('cardStitch', false);
+  await sleep(300);
+
+  ro.textContent = assembled;
+  ro.className = 'result-output';
+  document.getElementById('resultMeta').innerHTML =
+    `<span class="result-tag">lang: ${lang}</span>` +
+    `<span class="result-tag">tokens: ${tokens.length}</span>` +
+    `<span class="result-tag">coverage: ${cov}%</span>` +
+    `<span class="result-tag">type: ${stype}</span>` +
+    `<span class="result-tag">intent: ${intent}</span>`;
+  addLog(`✓ Pipeline complete — "${assembled}"`, 'done');
+
+  const p5 = document.getElementById('pill5');
+  p5.classList.add('active'); p5.style.background = 'var(--stack)';
+  running = false;
+  document.getElementById('runBtn').disabled = false;
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────── */
+function resetAll() {
+  if(running) return;
+  document.getElementById('srcInput').value = 'Hello, how are you doing today?';
+  document.getElementById('targetLang').value = 'Spanish';
+  document.getElementById('logPanel').innerHTML =
+    '<div class="log-line norm"><span class="ts">[--:--:--]</span><span class="msg"> Pipeline ready. Press ▶ Run Pipeline to start.</span></div>';
+  const ro = document.getElementById('resultOutput');
+  ro.textContent = 'Awaiting pipeline...';
+  ro.className = 'result-output empty';
+  document.getElementById('resultMeta').innerHTML = '';
+  ['cardClaude','cardJules','cardStitch'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+  });
+  for(let i=0;i<6;i++){ const p=document.getElementById('pill'+i); p.className='step-pill'; p.style.background=''; }
+  for(let i=0;i<4;i++) document.getElementById('stg'+i).classList.remove('active');
+  renderStack([]);
+  setOutput('outClaude','Idle — waiting for token stream from Stack...');
+  setOutput('outJules','Idle — waiting for analysis from Claude...');
+  setOutput('outStitch','Idle — waiting for translations from Jules...');
+}
+
+/* ── Code Tabs ──────────────────────────────────────────────────────── */
+function showTab(id, btn) {
+  document.querySelectorAll('.code-block').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.code-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+function copyCode() {
+  const active = document.querySelector('.code-block.active pre');
+  if(!active) return;
+  navigator.clipboard.writeText(active.innerText).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+/* ── Enter key ──────────────────────────────────────────────────────── */
+document.getElementById('srcInput').addEventListener('keydown', e => {
+  if(e.key === 'Enter') runSimulation();
+});
+</script>
+</body>
+</html>
