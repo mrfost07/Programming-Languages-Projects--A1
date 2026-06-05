@@ -1,0 +1,231 @@
+﻿:root {
+    color-scheme: dark;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0b1220;
+    color: #e4e9f2;
+    accent-color: #60a5fa;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 28%),
+        linear-gradient(135deg, #070b16 0%, #131a2d 45%, #0f172a 100%);
+}
+
+.page-shell {
+    width: min(1160px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 32px 0 48px;
+}
+
+.hero {
+    padding: 30px 32px;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 28px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.18);
+    margin-bottom: 28px;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(56, 189, 248, 0.14);
+    color: #7dd3fc;
+    font-size: 0.92rem;
+    letter-spacing: 0.01em;
+    margin-bottom: 18px;
+}
+
+.hero h1 {
+    margin: 0;
+    font-size: clamp(2rem, 2.5vw, 3rem);
+    line-height: 1.05;
+}
+
+.hero p {
+    margin: 16px 0 0;
+    max-width: 720px;
+    color: #cbd5e1;
+    line-height: 1.8;
+}
+
+.layout-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.card {
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 28px;
+    padding: 24px;
+    box-shadow: 0 22px 58px rgba(0, 0, 0, 0.14);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 1.35rem;
+}
+
+.card-header p {
+    margin: 8px 0 0;
+    color: #cbd5e1;
+    max-width: 560px;
+    line-height: 1.75;
+}
+
+.code-form {
+    display: grid;
+    gap: 18px;
+}
+
+textarea {
+    width: 100%;
+    min-height: 320px;
+    padding: 20px;
+    border-radius: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(15, 23, 42, 0.96);
+    color: #f8fafc;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.96rem;
+    line-height: 1.65;
+    resize: vertical;
+    outline: none;
+}
+
+textarea::placeholder {
+    color: #94a3b8;
+}
+
+.primary-button {
+    align-self: start;
+    padding: 16px 26px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #60a5fa, #38bdf8);
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.primary-button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+}
+
+.output {
+    background: rgba(10, 14, 23, 0.96);
+    border: 1px solid rgba(56, 189, 248, 0.14);
+    border-radius: 22px;
+    padding: 22px;
+    min-height: 320px;
+    overflow-x: auto;
+}
+
+.output pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #e2e8f0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+    .layout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sample-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.sample-card {
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.18);
+    border-radius: 24px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sample-title {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.sample-card pre {
+    margin: 0;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.98);
+    color: #e2e8f0;
+    overflow-x: auto;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.copy-button {
+    border: none;
+    background: rgba(56, 189, 248, 0.18);
+    color: #dbeafe;
+    padding: 12px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s ease, background 0.2s ease;
+    align-self: flex-start;
+}
+
+.copy-button:hover {
+    transform: translateY(-1px);
+    background: rgba(56, 189, 248, 0.28);
+}
+
+@media (max-width: 720px) {
+    .sample-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .page-shell {
+        padding: 22px 0 34px;
+    }
+
+    .hero,
+    .card {
+        padding: 20px;
+    }
+
+    textarea {
+        min-height: 260px;
+    }
+}
