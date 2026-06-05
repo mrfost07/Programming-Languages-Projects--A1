@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Programming Language Runtime Simulator
+    </title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static',
+          filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HERO -->
+
+    <div class="hero">
+
+        <p class="subtitle">
+            CLAUDE • JULES • STITCH
+        </p>
+
+        <h1>
+            Programming Language Runtime Simulator
+        </h1>
+
+        <p class="description">
+
+            Visualize bytecode execution,
+            runtime efficiency,
+            memory overhead,
+            concurrency,
+            and parallelism
+            using stack-based execution.
+
+        </p>
+
+    </div>
+
+    <!-- ARCHITECTURE -->
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>
+                System Architecture
+            </h2>
+
+        </div>
+
+        <div class="claude-box">
+
+            <b>Claude Module</b>
+            → Runtime Analysis Engine
+
+            <br><br>
+
+            <b>Jules Module</b>
+            → Parallel Stack Execution Engine
+
+            <br><br>
+
+            <b>Stitch Module</b>
+            → Dashboard Visualization Layer
+
+        </div>
+
+    </div>
+
+    <!-- CONTROLS -->
+
+    <div class="controls">
+
+        <div class="input-group">
+
+            <label>
+                Programming Language
+            </label>
+
+            <select id="language">
+
+                <option>Python</option>
+                <option>Java</option>
+                <option>C++</option>
+                <option>JavaScript</option>
+
+            </select>
+
+        </div>
+
+        <div class="input-group">
+
+            <label>
+                Stack Depth / Threads
+            </label>
+
+            <input
+                type="number"
+                id="stackDepth"
+                value="5"
+                min="1"
+                max="12">
+
+        </div>
+
+        <button onclick="runSimulation()">
+
+            ▶ Run Simulation
+
+        </button>
+
+    </div>
+
+    <!-- JULES -->
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>
+                Jules Module –
+                Parallel Stack Execution
+            </h2>
+
+            <div class="status">
+
+                CONCURRENT EXECUTION
+
+            </div>
+
+        </div>
+
+        <div id="threadsGrid"
+             class="threads-grid">
+
+        </div>
+
+    </div>
+
+    <!-- STITCH TRACE -->
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>
+                Runtime Execution Trace
+            </h2>
+
+        </div>
+
+        <div id="traceLog"
+             class="trace-log">
+
+        </div>
+
+    </div>
+
+    <!-- STITCH METRICS -->
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>
+                Runtime Performance Metrics
+            </h2>
+
+        </div>
+
+        <div id="metricsContainer">
+
+        </div>
+
+    </div>
+
+    <!-- CLAUDE -->
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>
+                Claude Runtime Analysis
+            </h2>
+
+        </div>
+
+        <div id="claudeBox"
+             class="claude-box">
+
+            Waiting for simulation...
+
+        </div>
+
+    </div>
+
+    <!-- CONCEPTS -->
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h2>
+                Programming Language Evaluation
+            </h2>
+
+        </div>
+
+        <div class="claude-box">
+
+            <b>Bytecode</b>
+            <br>
+            Intermediate instructions executed by runtime environments.
+
+            <br><br>
+
+            <b>Runtime Efficiency</b>
+            <br>
+            Speed at which instructions are executed.
+
+            <br><br>
+
+            <b>Memory Overhead</b>
+            <br>
+            Additional memory consumed during execution.
+
+            <br><br>
+
+            <b>Concurrency</b>
+            <br>
+            Multiple tasks progressing together.
+
+            <br><br>
+
+            <b>Parallelism</b>
+            <br>
+            Multiple threads executing simultaneously.
+
+        </div>
+
+    </div>
+
+    <footer>
+
+        Powered by Claude • Jules • Stitch
+
+    </footer>
+
+</div>
+
+<script src="{{ url_for('static',
+filename='script.js') }}"></script>
+
+</body>
+</html>
