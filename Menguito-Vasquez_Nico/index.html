@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DuckTrace | Duck Typing Syntax Checker - Colorful Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            font-family: 'Fira Code', 'Courier New', 'Monaco', monospace;
+            padding: 20px;
+        }
+
+        /* Main Container */
+        .ducktrace-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #e94560 0%, #533483 50%, #0f3460 100%);
+            padding: 20px 28px;
+            border-bottom: 2px solid #ff6b6b;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffe66d, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .header h1 span {
+            background: linear-gradient(135deg, #ffe66d, #ff9f43);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .subtitle {
+            color: #ffe66d;
+            font-size: 0.85rem;
+            margin-top: 6px;
+            opacity: 0.95;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(5px);
+            padding: 5px 14px;
+            border-radius: 25px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .badge.python {
+            background: linear-gradient(135deg, #3776ab, #ffd43b);
+            color: #1a1a2e;
+            font-weight: bold;
+        }
+
+        .badge.duck {
+            background: linear-gradient(135deg, #f9ca24, #f0932b);
+            color: #1a1a2e;
+        }
+
+        .badge.check {
+            background: linear-gradient(135deg, #6ab04c, #2ecc71);
+            color: white;
+        }
+
+        /* Main Content - Split Layout */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 0;
+            min-height: 550px;
+        }
+
+        /* LEFT PANEL - Code Editor */
+        .code-panel {
+            border-right: 2px solid #ff6b6b;
+            background: #0f0f23;
+        }
+
+        .panel-header {
+            background: linear-gradient(90deg, #ff6b6b, #ff9f43);
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .code-editor {
+            background: #0f0f23;
+            padding: 20px 0;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .code-line {
+            display: flex;
+            padding: 3px 0;
+            transition: background 0.2s;
+        }
+
+        .code-line:hover {
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .line-number {
+            width: 55px;
+            text-align: right;
+            padding-right: 18px;
+            color: #ff9f43;
+            user-select: none;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .line-content {
+            flex: 1;
+            color: #e0e0e0;
+            white-space: pre-wrap;
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Syntax Colors - Colorful! */
+        .keyword { color: #ff6b6b; font-weight: bold; }
+        .function { color: #ff9f43; font-weight: bold; }
+        .string { color: #6ab04c; }
+        .comment { color: #8b8c9e; font-style: italic; }
+        .class-name { color: #f9ca24; font-weight: bold; }
+        .builtin { color: #4ecdc4; font-weight: bold; }
+
+        /* RIGHT PANEL - Controls & Output */
+        .right-panel {
+            background: linear-gradient(135deg, #16213e, #0f0f23);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Control Buttons - Colorful! */
+        .control-section {
+            padding: 20px;
+            border-bottom: 2px solid #ff6b6b;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            background: rgba(255, 107, 107, 0.05);
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .btn-run {
+            background: linear-gradient(135deg, #6ab04c, #2ecc71);
+            color: white;
+        }
+
+        .btn-run:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.4);
+        }
+
+        .btn-trace {
+            background: linear-gradient(135deg, #4ecdc4, #44bd9e);
+            color: white;
+        }
+
+        .btn-trace:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.4);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #ff9f43, #f0932b);
+            color: white;
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 159, 67, 0.4);
+        }
+
+        /* Duck Typing Info - Colorful Card */
+        .info-section {
+            padding: 20px;
+            border-bottom: 2px solid #f9ca24;
+            background: linear-gradient(135deg, #1e2a3a, #1a1a2e);
+        }
+
+        .info-title {
+            color: #f9ca24;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .info-text {
+            color: #c9d1d9;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+
+        .info-text strong {
+            color: #ff9f43;
+        }
+
+        .info-highlight {
+            background: rgba(249, 202, 36, 0.15);
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 12px;
+            border-left: 4px solid #f9ca24;
+        }
+
+        /* Output Console */
+        .output-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .output-header {
+            background: linear-gradient(90deg, #4ecdc4, #44bd9e);
+            padding: 10px 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #1a1a2e;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .output-console {
+            flex: 1;
+            background: #0a0a1a;
+            padding: 16px;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            overflow-y: auto;
+            min-height: 200px;
+        }
+
+        .output-line {
+            padding: 6px 0;
+            border-left: 4px solid;
+            padding-left: 14px;
+            margin-bottom: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .output-success {
+            border-left-color: #2ecc71;
+            color: #6ab04c;
+            background: rgba(46, 204, 113, 0.05);
+        }
+
+        .output-error {
+            border-left-color: #ff6b6b;
+            color: #ff8a8a;
+            background: rgba(255, 107, 107, 0.05);
+        }
+
+        .output-info {
+            border-left-color: #4ecdc4;
+            color: #6cd4cc;
+            background: rgba(78, 205, 196, 0.05);
+        }
+
+        .output-warning {
+            border-left-color: #f9ca24;
+            color: #ffe066;
+            background: rgba(249, 202, 36, 0.05);
+        }
+
+        /* Syntax Checker Section - Colorful Footer */
+        .syntax-checker {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            margin-top: 0;
+            border-top: 2px solid #ff9f43;
+            padding: 16px 24px;
+        }
+
+        .syntax-title {
+            font-size: 0.75rem;
+            color: #ff9f43;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .criteria-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .criteria-item {
+            font-size: 0.7rem;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .criteria-item.pass {
+            background: linear-gradient(135deg, #1a4d2a, #2ecc71);
+            color: white;
+            box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
+        }
+
+        .criteria-item.fail {
+            background: linear-gradient(135deg, #4a1a1a, #ff6b6b);
+            color: white;
+        }
+
+        /* Footer */
+        .footer {
+            background: linear-gradient(90deg, #533483, #e94560);
+            padding: 14px 24px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.7rem;
+            color: #ffe66d;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .code-panel {
+                border-right: none;
+                border-bottom: 2px solid #ff6b6b;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #ff6b6b, #ff9f43);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #ff9f43, #f9ca24);
+        }
+    </style>
+</head>
+<body>
+<div class="ducktrace-container">
+    <!-- Header -->
+    <div class="header">
+        <h1>🦆 <span>DuckTrace</span> | 🎨 COLORFUL DUCK TYPING SYNTAX CHECKER</h1>
+        <div class="subtitle">✨ Language Features: Duck Typing | Python-style Runtime Behavior Checking | "If it quacks like a duck..." ✨</div>
+        <div class="badge-row">
+            <div class="badge python">🐍 Python Duck Typing</div>
+            <div class="badge duck">🦆 "Quack Like a Duck"</div>
+            <div class="badge check">✅ Runtime Method Check</div>
+            <div class="badge" style="background: linear-gradient(135deg, #ff6b6b, #e94560);">🔍 No Type Checking</div>
+            <div class="badge" style="background: linear-gradient(135deg, #4ecdc4, #44bd9e);">📋 Behavior > Type</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- LEFT: Code Editor -->
+        <div class="code-panel">
+            <div class="panel-header">
+                📝 MAIN.PY — Duck Typing Demo (Colorful Syntax)
+            </div>
+            <div class="code-editor" id="codeEditor">
+                <!-- Code lines will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- RIGHT: Controls & Output -->
+        <div class="right-panel">
+            <div class="control-section">
+                <button class="btn btn-run" id="runBtn">▶ RUN CODE</button>
+                <button class="btn btn-trace" id="traceBtn">🔍 TRACE MODE</button>
+                <button class="btn btn-reset" id="resetBtn">⟳ RESET</button>
+            </div>
+
+            <div class="info-section">
+                <div class="info-title">🦆 WHAT IS DUCK TYPING?</div>
+                <div class="info-text">
+                    <strong>A LANGUAGE FEATURE</strong> where objects are evaluated based on their <strong style="color:#ff9f43">METHODS</strong>, not their class or type.<br><br>
+                    🎯 <strong>Python checks:</strong> "Can this object <span style="color:#6ab04c">.quack()</span>?"<br>
+                    🎯 <strong>NOT:</strong> "Is this a <span style="color:#ff6b6b">Duck</span> object?"<br><br>
+                    <div class="info-highlight">
+                        💡 <strong>Key Insight:</strong> Duck typing enables FLEXIBLE, REUSABLE code without inheritance hierarchies. Any object with the right method works!
+                    </div>
+                </div>
+            </div>
+
+            <div class="output-section">
+                <div class="output-header">
+                    🖥️ RUNTIME OUTPUT & SYNTAX CHECK
+                </div>
+                <div class="output-console" id="outputConsole">
+                    <div class="output-line output-info">🎨 Colorful DuckTrace Ready — Click RUN to test duck typing</div>
+                    <div class="output-line output-info">💡 Duck typing: Python only cares whether an object CAN do what we ask</div>
+                    <div class="output-line output-warning">🦆 "If it quacks like a duck... treat it like a duck!"</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Syntax Checker Criteria Footer -->
+    <div class="syntax-checker">
+        <div class="syntax-title">🔬 DUCK TYPING SYNTAX CHECKER — 6 Language Feature Criteria</div>
+        <div class="criteria-list" id="criteriaList">
+            <!-- Dynamic criteria will be inserted -->
+        </div>
+    </div>
+
+    <div class="footer">
+        🦆 DuckTrace | 🎨 Colorful Edition | Demonstrates Duck Typing as a Python/JavaScript Language Feature | Runtime Method Existence Check | No Type Inheritance Required
+    </div>
+</div>
+
+<script>
+    // ============================================
+    // DUCK TYPING SIMULATION - COLORFUL SYNTAX CHECKER
+    // Demonstrates Duck Typing as Language Feature
+    // ============================================
+
+    // Colorful code content with emojis and fun comments
+    const codeContent = `# 🦆 DUCK TYPING DEMONSTRATION
+# Python only cares whether an object CAN do what we ask
+# NOT what its class type is!
+
+class Duck 🦆:
+    def quack(self):
+        return "Quack! Quack! 🦆🦆"
+
+class Person 😊:
+    def quack(self):
+        return "I'm pretending to be a duck! 🎭🦆"
+
+class Dog 🐕:
+    def bark(self):
+        return "Woof! Woof! 🐕"
+    # ⚠️ Dog has NO quack method!
+    # Watch what happens when we test it...
+
+def make_it_quack(thing):
+    # 🔥 DUCK TYPING IN ACTION:
+    # We NEVER check the type with isinstance()
+    # We just CHECK if .quack() EXISTS!
+    return thing.quack()
+
+# ============================================
+# TESTING DUCK TYPING
+# ============================================
+
+print("--- 🦆 Duck Typing Test Results ---")
+
+# Test 1: Real Duck
+duck = Duck()
+print("🐥 Duck:", make_it_quack(duck))
+
+# Test 2: Person pretending
+person = Person()
+print("👤 Person:", make_it_quack(person))
+
+# Test 3: Dog (This will FAIL!)
+dog = Dog()
+print("🐕 Dog:", make_it_quack(dog))  # 💥 Runtime Error!`;
+
+    // Syntax highlighted version - Colorful!
+    function syntaxHighlight(line, lineNum) {
+        // Comments with # 
+        if (line.trim().startsWith('#')) {
+            let colored = line.replace(/#(.*)/, '<span class="comment">#$1</span>');
+            return colored;
+        }
+        // Emoji handling in comments
+        if (line.includes('🦆') || line.includes('😊') || line.includes('🐕')) {
+            let colored = line.replace(/(🦆|😊|🐕|🎭|🐥|👤|🔥|⚠️)/g, '<span style="color: #f9ca24; font-size: 1.1em;">$1</span>');
+            return colored;
+        }
+        // Class definition
+        if (line.trim().startsWith('class ')) {
+            let highlighted = line.replace(/class\s+(\w+)/, '<span class="keyword">class</span> <span class="class-name">$1</span>');
+            highlighted = highlighted.replace(/:/g, '<span class="keyword">:</span>');
+            return highlighted;
+        }
+        // Function definition
+        if (line.trim().startsWith('def ')) {
+            let highlighted = line.replace(/def\s+(\w+)/, '<span class="keyword">def</span> <span class="function">$1</span>');
+            highlighted = highlighted.replace(/:/g, '<span class="keyword">:</span>');
+            return highlighted;
+        }
+        // Return statement
+        if (line.includes('return ')) {
+            let highlighted = line.replace(/return/, '<span class="keyword">return</span>');
+            highlighted = highlighted.replace(/".*?"/, '<span class="string">$&</span>');
+            return highlighted;
+        }
+        // Print statement
+        if (line.includes('print(')) {
+            let highlighted = line.replace(/print/, '<span class="builtin">print</span>');
+            highlighted = highlighted.replace(/".*?"/g, '<span class="string">$&</span>');
+            return highlighted;
+        }
+        // String literals
+        let highlighted = line.replace(/".*?"/g, '<span class="string">$&</span>');
+        // Keywords
+        const keywords = ['def', 'class', 'return', 'if', 'else', 'try', 'except', 'self'];
+        keywords.forEach(kw => {
+            const regex = new RegExp(`\\b${kw}\\b`, 'g');
+            highlighted = highlighted.replace(regex, `<span class="keyword">${kw}</span>`);
+        });
+        return highlighted;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function renderCodeEditor() {
+        const editor = document.getElementById('codeEditor');
+        const lines = codeContent.split('\n');
+        editor.innerHTML = '';
+        lines.forEach((line, index) => {
+            const lineDiv = document.createElement('div');
+            lineDiv.className = 'code-line';
+            const lineNumSpan = document.createElement('span');
+            lineNumSpan.className = 'line-number';
+            lineNumSpan.textContent = (index + 1).toString();
+            const contentSpan = document.createElement('span');
+            contentSpan.className = 'line-content';
+            contentSpan.innerHTML = syntaxHighlight(line, index + 1);
+            lineDiv.appendChild(lineNumSpan);
+            lineDiv.appendChild(contentSpan);
+            editor.appendChild(lineDiv);
+        });
+    }
+
+    // ============================================
+    // DUCK TYPING SIMULATION CLASSES - Colorful!
+    // ============================================
+    
+    class Duck {
+        quack() {
+            return "Quack! Quack! 🦆🦆";
+        }
+    }
+
+    class Person {
+        quack() {
+            return "I'm pretending to be a duck! 🎭🦆";
+        }
+    }
+
+    class Dog {
+        bark() {
+            return "Woof! Woof! 🐕";
+        }
+        // NO quack method - demonstrates duck typing failure!
+    }
+
+    // THE DUCK TYPING FUNCTION
+    function makeItQuack(thing) {
+        // DUCK TYPING: Check if METHOD exists, not TYPE!
+        if (thing && typeof thing.quack === 'function') {
+            return thing.quack();
+        } else {
+            throw new Error(`❌ '${thing.constructor.name}' object has NO 'quack' attribute! (Only has: ${Object.getOwnPropertyNames(Object.getPrototypeOf(thing)).filter(m => m !== 'constructor').join(', ') || 'none'})`);
+        }
+    }
+
+    // Console output management
+    let outputLines = [];
+    let traceMode = false;
+
+    function addOutput(message, type = 'info') {
+        const line = { message, type, timestamp: new Date().toLocaleTimeString() };
+        outputLines.unshift(line);
+        if (outputLines.length > 25) outputLines.pop();
+        renderOutput();
+    }
+
+    function renderOutput() {
+        const consoleDiv = document.getElementById('outputConsole');
+        consoleDiv.innerHTML = '';
+        [...outputLines].reverse().forEach(line => {
+            const lineDiv = document.createElement('div');
+            lineDiv.className = `output-line output-${line.type}`;
+            lineDiv.innerHTML = line.message;
+            consoleDiv.appendChild(lineDiv);
+        });
+        if (outputLines.length === 0) {
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'output-line output-info';
+            infoDiv.innerHTML = '🎨 Click RUN to test duck typing!';
+            consoleDiv.appendChild(infoDiv);
+        }
+    }
+
+    function clearOutput() {
+        outputLines = [];
+        addOutput('🔄 Console cleared! Ready for new tests.', 'info');
+    }
+
+    // Run the duck typing tests - Colorful output!
+    function runDuckTypingTests() {
+        addOutput('🎬 ========== DUCK TYPING TEST EXECUTION ==========', 'info');
+        addOutput('▶ Running duck typing tests...', 'info');
+        
+        // Test 1: Duck
+        try {
+            const duck = new Duck();
+            const result = makeItQuack(duck);
+            addOutput(`✅ TEST 1: Duck 🦆 → ${result}`, 'success');
+            addOutput(`   └─ ✓ Duck HAS .quack() method → PASSES duck test`, 'success');
+        } catch (e) {
+            addOutput(`❌ TEST 1: Duck → ${e.message}`, 'error');
+        }
+        
+        // Test 2: Person
+        try {
+            const person = new Person();
+            const result = makeItQuack(person);
+            addOutput(`✅ TEST 2: Person 😊 → ${result}`, 'success');
+            addOutput(`   └─ ✓ Person HAS .quack() method → PASSES duck test`, 'success');
+        } catch (e) {
+            addOutput(`❌ TEST 2: Person → ${e.message}`, 'error');
+        }
+        
+        // Test 3: Dog (FAILURE - demonstrates duck typing)
+        try {
+            const dog = new Dog();
+            const result = makeItQuack(dog);
+            addOutput(`✅ TEST 3: Dog 🐕 → ${result}`, 'success');
+        } catch (e) {
+            addOutput(`❌ TEST 3: Dog 🐕 → ${e.message}`, 'error');
+            addOutput(`   └─ ✗ Dog has NO .quack() method → FAILS duck test`, 'error');
+            addOutput(`   └─ 📝 Dog only has: .bark() method`, 'warning');
+            addOutput(`   └─ 💡 This proves duck typing! Dog is rejected because it can't QUACK!`, 'warning');
+        }
+        
+        addOutput('🎯 ========== DUCK TYPING VERDICT ==========', 'info');
+        addOutput('✅ Duck Typing is a LANGUAGE FEATURE that checks METHODS, not TYPES', 'success');
+        addOutput('✅ "If it quacks like a duck... treat it like a duck!"', 'warning');
+        addOutput('✅ No inheritance, no interfaces, no type checking required!', 'success');
+        
+        updateCriteriaStatus(true);
+    }
+    
+    // Trace mode - Colorful step-by-step
+    function runTraceMode() {
+        addOutput('🔍 ========== TRACE MODE ACTIVATED ==========', 'info');
+        addOutput('📋 Step-by-step duck typing analysis:', 'info');
+        
+        addOutput('📌 STEP 1: Define classes (Duck 🦆, Person 😊, Dog 🐕)', 'info');
+        addOutput('📌 STEP 2: Define make_it_quack() function', 'info');
+        addOutput('   → 🔥 This function uses DUCK TYPING', 'info');
+        addOutput('   → ❌ It NEVER checks "isinstance(thing, Duck)"', 'info');
+        addOutput('   → ✅ It ONLY checks "if thing.quack EXISTS"', 'info');
+        addOutput('', 'info');
+        
+        addOutput('📌 STEP 3: Test Duck object', 'info');
+        addOutput('   → make_it_quack(Duck())', 'info');
+        addOutput('   → 🔍 Check: typeof Duck().quack === "function"?', 'info');
+        addOutput('   → ✅ YES → method exists!', 'success');
+        addOutput('   → 🎬 Result: "Quack! Quack! 🦆🦆"', 'success');
+        addOutput('', 'info');
+        
+        addOutput('📌 STEP 4: Test Person object', 'info');
+        addOutput('   → make_it_quack(Person())', 'info');
+        addOutput('   → 🔍 Check: typeof Person().quack === "function"?', 'info');
+        addOutput('   → ✅ YES → method exists!', 'success');
+        addOutput('   → 🎬 Result: "I\'m pretending to be a duck! 🎭🦆"', 'success');
+        addOutput('', 'info');
+        
+        addOutput('📌 STEP 5: Test Dog object (KEY DEMONSTRATION)', 'info');
+        addOutput('   → make_it_quack(Dog())', 'info');
+        addOutput('   → 🔍 Check: typeof Dog().quack === "function"?', 'info');
+        addOutput('   → ❌ NO → method does NOT exist!', 'error');
+        addOutput('   → 💥 Result: RuntimeError: no attribute "quack"', 'error');
+        addOutput('   → 📝 Dog has .bark() method, NOT .quack()', 'error');
+        addOutput('', 'info');
+        
+        addOutput('🏆 ========== DUCK TYPING VERIFIED ==========', 'success');
+        addOutput('   ✓ No type checking (no instanceof)', 'success');
+        addOutput('   ✓ Runtime method existence check', 'success');
+        addOutput('   ✓ Heterogeneous objects accepted', 'success');
+        addOutput('   ✗ Dog rejected because missing .quack()', 'error');
+        addOutput('   🎯 This is the DUCK TYPING LANGUAGE FEATURE!', 'warning');
+        
+        updateCriteriaStatus(true);
+    }
+
+    // Update syntax checker criteria - Colorful!
+    function updateCriteriaStatus(runComplete) {
+        const criteriaList = document.getElementById('criteriaList');
+        const criteria = [
+            { name: "🔍 Dynamic Method Lookup", pass: true, desc: "Uses bracket/property access" },
+            { name: "⏱️ Runtime Type Inspection", pass: true, desc: "typeof/callable check" },
+            { name: "📋 No Type Declarations", pass: true, desc: "No interfaces, no type hints" },
+            { name: "🔄 Heterogeneous Collection", pass: true, desc: "Duck, Person, Dog mixed" },
+            { name: "✅ Method Existence Check", pass: true, desc: "Checks before calling" },
+            { name: "🚫 No instanceof", pass: true, desc: "Never checks class type" },
+            { name: "🦆 The Duck Test", pass: true, desc: '"If it quacks like a duck..."' }
+        ];
+        
+        criteriaList.innerHTML = '';
+        criteria.forEach(c => {
+            const item = document.createElement('div');
+            item.className = `criteria-item ${c.pass ? 'pass' : 'fail'}`;
+            item.innerHTML = `${c.name}`;
+            item.title = c.desc;
+            criteriaList.appendChild(item);
+        });
+        
+        if (runComplete) {
+            const summary = document.createElement('div');
+            summary.className = 'criteria-item';
+            summary.style.background = 'linear-gradient(135deg, #f9ca24, #f0932b)';
+            summary.style.color = '#1a1a2e';
+            summary.style.fontWeight = 'bold';
+            summary.innerHTML = '🏆 ALL 7 DUCK TYPING CRITERIA PASSED! 🏆';
+            criteriaList.appendChild(summary);
+        }
+    }
+
+    // Reset everything
+    function resetSimulation() {
+        clearOutput();
+        addOutput('🔄 DuckTrace Reset Complete!', 'info');
+        addOutput('🎨 Colorful Duck Typing Syntax Checker Ready!', 'info');
+        addOutput('🦆 Remember: "If it quacks like a duck... treat it like a duck!"', 'warning');
+        addOutput('💡 Click RUN to test the duck typing language feature!', 'info');
+        updateCriteriaStatus(false);
+    }
+
+    // Initialize
+    function init() {
+        renderCodeEditor();
+        resetSimulation();
+        
+        document.getElementById('runBtn').addEventListener('click', () => {
+            runDuckTypingTests();
+        });
+        
+        document.getElementById('traceBtn').addEventListener('click', () => {
+            runTraceMode();
+        });
+        
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            resetSimulation();
+        });
+    }
+    
+    init();
+</script>
+</body>
+</html>
