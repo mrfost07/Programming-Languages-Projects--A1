@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexical Analysis Process Simulation</title>
+    <style>
+        :root {
+            --bg-color: #050510;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #00f2ff;
+            --secondary: #7000ff;
+            --accent: #ff00d9;
+            --text: #e0e0e0;
+            --keyword: #ff79c6;
+            --identifier: #8be9fd;
+            --operator: #50fa7b;
+            --number: #bd93f9;
+            --string: #f1fa8c;
+            --comment: #6272a4;
+            --error: #ff5555;
+            --font-mono: 'Fira Code', 'Courier New', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(112, 0, 255, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(0, 242, 255, 0.1) 0%, transparent 40%);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--secondary);
+            border-radius: 4px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            padding: 5px 15px;
+            border-radius: 20px;
+            background: rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            opacity: 0.5;
+        }
+
+        .status-active {
+            opacity: 1;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .status-active .status-dot {
+            box-shadow: 0 0 10px currentColor;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .process-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        .process-step {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            margin: 0 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .process-step.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+            background: rgba(0, 242, 255, 0.05);
+            color: var(--primary);
+        }
+
+        .process-arrow {
+            position: absolute;
+            top: 50%;
+            width: 20px;
+            height: 2px;
+            background: var(--glass-border);
+            right: -15px;
+            transform: translateY(-50%);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.5);
+            min-height: 450px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 10px;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .code-input-container {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        textarea#code-input {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: var(--text);
+            padding: 15px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        textarea#code-input:focus {
+            border-color: var(--secondary);
+        }
+
+        .sample-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn-sample {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
+            color: #ccc;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .btn-sample:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+            font-size: 0.85rem;
+        }
+
+        .btn-run {
+            background: linear-gradient(45deg, #00c6ff, #0072ff);
+            color: white;
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.4);
+        }
+
+        .btn-run:hover:not(:disabled) {
+            box-shadow: 0 0 25px rgba(0, 198, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-next {
+            background: linear-gradient(45deg, #7000ff, #ff00d9);
+            color: white;
+            box-shadow: 0 0 15px rgba(112, 0, 255, 0.4);
+        }
+
+        .btn-next:disabled, .btn-run:disabled {
+            background: #333;
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .scanner-viz {
+            flex-grow: 1;
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            font-family: var(--font-mono);
+            overflow: auto;
+            white-space: pre-wrap;
+            font-size: 18px;
+            border: 1px solid var(--glass-border);
+            max-height: 300px;
+        }
+
+        .char-box {
+            display: inline-block;
+            width: 22px;
+            height: 32px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin: 1px;
+            border-radius: 3px;
+            transition: all 0.1s;
+        }
+
+        .char-current {
+            background: var(--primary);
+            color: black;
+            font-weight: bold;
+            box-shadow: 0 0 15px var(--primary);
+            transform: scale(1.15);
+            z-index: 10;
+        }
+
+        .char-scanned {
+            color: #555;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .char-matched {
+            color: var(--operator);
+            background: rgba(80, 250, 123, 0.1);
+            border-color: var(--operator);
+        }
+
+        .progress-container {
+            margin-top: 15px;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s;
+        }
+
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 30px;
+        }
+
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(255,255,255,0.1);
+            padding: 12px;
+            font-size: 0.9rem;
+            color: var(--primary);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.85rem;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .token-keyword { color: var(--keyword); font-weight: bold; }
+        .token-identifier { color: var(--identifier); }
+        .token-operator { color: var(--operator); }
+        .token-separator { color: #fff; }
+        .token-number { color: var(--number); }
+        .token-string { color: var(--string); }
+        .token-comment { color: var(--comment); font-style: italic; }
+        .token-invalid { color: var(--error); text-decoration: underline; }
+
+        .explanation-content {
+            flex-grow: 1;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            overflow-y: auto;
+            max-height: 380px;
+        }
+
+        .explanation-step {
+            margin-bottom: 12px;
+            padding: 10px;
+            border-left: 3px solid var(--secondary);
+            background: rgba(255,255,255,0.02);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .console-panel {
+            grid-column: span 2;
+            margin-top: 30px;
+            min-height: 200px;
+        }
+
+        .console-output {
+            background: #000;
+            height: 180px;
+            padding: 15px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #00ff00;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .console-line {
+            margin-bottom: 4px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .console-time { color: #666; }
+        .console-msg-info { color: #00f2ff; }
+        .console-msg-success { color: #50fa7b; }
+        .console-msg-warning { color: #ffb86c; }
+        .console-msg-error { color: #ff5555; }
+
+        #loader-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loader-spinner {
+            width: 80px; height: 80px;
+            border: 5px solid rgba(0, 242, 255, 0.1);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .loader-text {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid, .bottom-grid { grid-template-columns: 1fr; }
+            .console-panel { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Fake Compiler Animation Loader -->
+    <div id="loader-overlay">
+        <div class="loader-spinner"></div>
+        <div class="loader-text" id="loader-message">Initializing Lexical Analyzer...</div>
+    </div>
+
+    <div class="container">
+        <!-- Header & Status Indicators -->
+        <header>
+            <h1>Lexical Analysis Process Simulation</h1>
+            <div class="status-bar">
+                <div id="status-idle" class="status-indicator status-active" style="color: #888;">
+                    <div class="status-dot"></div> IDLE
+                </div>
+                <div id="status-scanning" class="status-indicator" style="color: var(--primary);">
+                    <div class="status-dot"></div> SCANNING
+                </div>
+                <div id="status-completed" class="status-indicator" style="color: var(--operator);">
+                    <div class="status-dot"></div> COMPLETED
+                </div>
+                <div id="status-error" class="status-indicator" style="color: var(--error);">
+                    <div class="status-dot"></div> ERROR
+                </div>
+            </div>
+        </header>
+
+        <!-- Process Flow Visualization -->
+        <section class="process-section">
+            <div class="process-step active" id="step-src">
+                Source Code
+                <div class="process-arrow"></div>
+            </div>
+            <div class="process-step" id="step-scan">
+                Scanning Character
+                <div class="process-arrow"></div>
+            </div>
+            <div class="process-step" id="step-regex">
+                Pattern Match
+                <div class="process-arrow"></div>
+            </div>
+            <div class="process-step" id="step-token">
+                Token Found
+                <div class="process-arrow"></div>
+            </div>
+            <div class="process-step" id="step-table">
+                Add to Table
+            </div>
+        </section>
+
+        <div class="main-grid">
+            <!-- Code Input Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Source Code Input</div>
+                    <div class="sample-buttons">
+                        <button class="btn-sample" onclick="loadSample('python')">Python</button>
+                        <button class="btn-sample" onclick="loadSample('java')">Java</button>
+                        <button class="btn-sample" onclick="loadSample('cpp')">C++</button>
+                    </div>
+                </div>
+                <div class="code-input-container">
+                    <textarea id="code-input" spellcheck="false">/* Demo */
+int a = 5;
+float b = 10.5;
+if (a > 0) {
+    print("Ok");
+}</textarea>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-run" id="btn-run" onclick="startAnalysis()">Run Analysis</button>
+                    <button class="btn btn-next" id="btn-next" onclick="stepNext()" disabled>Next Step</button>
+                    <button class="btn btn-reset" onclick="resetAll()">Reset</button>
+                </div>
+            </div>
+
+            <!-- Scanner Visualization Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Scanner Visualization</div>
+                </div>
+                <div class="scanner-viz" id="scanner-viz"></div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-grid">
+            <!-- Token Table -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Token Table</div>
+                </div>
+                <div class="table-container">
+                    <table id="token-table">
+                        <thead>
+                            <tr>
+                                <th>Token ID</th>
+                                <th>Token Type</th>
+                                <th>Token Value</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Explanation Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Educational Explanation</div>
+                </div>
+                <div class="explanation-content" id="explanation-box">
+                    <p>Press "Run Analysis" to begin character-by-character scanning.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal Console Panel -->
+        <div class="panel console-panel">
+            <div class="panel-header">
+                <div class="panel-title">Console Output</div>
+                <button class="btn-sample" onclick="clearConsole()">Clear Console</button>
+            </div>
+            <div class="console-output" id="console-output"></div>
+        </div>
+    </div>
+
+    <script>
+        // Token Definitions and Regex Patterns
+        const TOKEN_TYPES = {
+            KEYWORD: {
+                pattern: /^(if|else|while|for|return|int|float|double|char|void|class|public|static|private|def|import|from|print|break|continue|bool|true|false)\b/,
+                color: 'token-keyword',
+                desc: 'Reserved keyword'
+            },
+            STRING: {
+                pattern: /^("[^"]*"|'[^']*')/,
+                color: 'token-string',
+                desc: 'String literal'
+            },
+            NUMBER: {
+                pattern: /^[0-9]+(\.[0-9]+)?\b/,
+                color: 'token-number',
+                desc: 'Numeric value'
+            },
+            COMMENT_SINGLE: {
+                pattern: /^(\/\/.*|#.*)/,
+                color: 'token-comment',
+                desc: 'Single-line comment'
+            },
+            COMMENT_MULTI: {
+                pattern: /^\/\*[\s\S]*?\*\//,
+                color: 'token-comment',
+                desc: 'Multi-line comment'
+            },
+            OPERATOR: {
+                pattern: /^(==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!])/,
+                color: 'token-operator',
+                desc: 'Logical/Math operator'
+            },
+            SEPARATOR: {
+                pattern: /^[\(\)\{\}\[\]\.,;:]/,
+                color: 'token-separator',
+                desc: 'Punctuation/Separator'
+            },
+            IDENTIFIER: {
+                pattern: /^[a-zA-Z_][a-zA-Z0-9_]*\b/,
+                color: 'token-identifier',
+                desc: 'User-defined identifier'
+            },
+            WHITESPACE: {
+                pattern: /^\s+/,
+                color: null,
+                desc: 'Whitespace'
+            }
+        };
+
+        const SAMPLES = {
+            python: `def calculate(n):\n    # Python Comment\n    if n > 10:\n        return "Big"\n    return n * 2`,
+            java: `public class Demo {\n    public static void main(String[] args) {\n        int x = 42;\n        System.out.println(x);\n    }\n}`,
+            cpp: `#include <iostream>\nint main() {\n    /* C++ Code */\n    float price = 19.99;\n    if (price < 20) return 1;\n}`
+        };
+
+        let sourceCode = "";
+        let cursor = 0;
+        let lineNum = 1;
+        let tokens = [];
+        let isRunning = false;
+        
+        // Character-by-character state tracking
+        let currentTargetToken = null;
+        let charIndexInToken = 0;
+
+        // Sub-step states for granular simulation
+        const SUBSTEP_SCAN = 'SCAN';
+        const SUBSTEP_REGEX = 'REGEX';
+        const SUBSTEP_TOKEN = 'TOKEN';
+        const SUBSTEP_TABLE = 'TABLE';
+        let currentSubStep = SUBSTEP_SCAN;
+
+        // UI Element References
+        const ui = {
+            input: document.getElementById('code-input'),
+            viz: document.getElementById('scanner-viz'),
+            table: document.getElementById('token-table').querySelector('tbody'),
+            explanation: document.getElementById('explanation-box'),
+            console: document.getElementById('console-output'),
+            progressBar: document.getElementById('progress-bar'),
+            btnNext: document.getElementById('btn-next'),
+            btnRun: document.getElementById('btn-run'),
+            loader: document.getElementById('loader-overlay'),
+            loaderMsg: document.getElementById('loader-message'),
+            statuses: {
+                idle: document.getElementById('status-idle'),
+                scanning: document.getElementById('status-scanning'),
+                completed: document.getElementById('status-completed'),
+                error: document.getElementById('status-error')
+            },
+            steps: {
+                src: document.getElementById('step-src'),
+                scan: document.getElementById('step-scan'),
+                regex: document.getElementById('step-regex'),
+                token: document.getElementById('step-token'),
+                table: document.getElementById('step-table')
+            }
+        };
+
+        // Helper: Log to Terminal Console
+        function log(msg, type = 'info') {
+            const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
+            const div = document.createElement('div');
+            div.className = 'console-line';
+            div.innerHTML = `<span class="console-time">[${time}]</span> <span class="console-msg-${type}">${msg}</span>`;
+            ui.console.appendChild(div);
+            ui.console.scrollTop = ui.console.scrollHeight;
+        }
+
+        // Helper: Update Status Indicators
+        function setStatus(status) {
+            Object.values(ui.statuses).forEach(s => s.classList.remove('status-active'));
+            ui.statuses[status].classList.add('status-active');
+        }
+
+        // Helper: Update Flowchart Active Step
+        function setProcessStep(stepKey) {
+            Object.values(ui.steps).forEach(s => s.classList.remove('active'));
+            if(ui.steps[stepKey]) ui.steps[stepKey].classList.add('active');
+        }
+
+        // Action: Load Code Samples
+        function loadSample(lang) {
+            ui.input.value = SAMPLES[lang];
+            resetAll();
+            log(`Loaded ${lang.toUpperCase()} sample.`);
+        }
+
+        // Action: Clear Terminal
+        function clearConsole() {
+            ui.console.innerHTML = '';
+            log('Console cleared.');
+        }
+
+        // Render the Scanner Visualization Area
+        function renderViz() {
+            ui.viz.innerHTML = "";
+            for (let i = 0; i < sourceCode.length; i++) {
+                const span = document.createElement('span');
+                span.className = 'char-box';
+                span.id = `char-${i}`;
+                span.textContent = sourceCode[i] === "\n" ? "↵" : sourceCode[i];
+                if (i < cursor) span.classList.add('char-scanned');
+                ui.viz.appendChild(span);
+            }
+        }
+
+        // Reset the simulation state
+        function resetAll() {
+            cursor = 0;
+            lineNum = 1;
+            tokens = [];
+            isRunning = false;
+            currentTargetToken = null;
+            charIndexInToken = 0;
+            currentSubStep = SUBSTEP_SCAN;
+            
+            ui.table.innerHTML = "";
+            ui.explanation.innerHTML = "<p>Simulation reset. Ready.</p>";
+            ui.progressBar.style.width = "0%";
+            ui.btnNext.disabled = true;
+            ui.btnRun.disabled = false;
+            
+            setStatus('idle');
+            setProcessStep('src');
+            sourceCode = ui.input.value;
+            renderViz();
+            log('Simulation reset.');
+        }
+
+        // Start the Analysis Process
+        async function startAnalysis() {
+            sourceCode = ui.input.value;
+            if(!sourceCode.trim()) {
+                log('Input is empty!', 'error');
+                return;
+            }
+
+            // Show Fake Compiler Loading Animation
+            ui.loader.style.display = 'flex';
+            const msgs = ["Initializing Lexical Analyzer...", "Scanning Source Code...", "Generating Tokens..."];
+            for(let m of msgs) {
+                ui.loaderMsg.textContent = m;
+                await new Promise(r => setTimeout(r, 600));
+            }
+            ui.loader.style.display = 'none';
+
+            isRunning = true;
+            cursor = 0;
+            lineNum = 1;
+            tokens = [];
+            currentSubStep = SUBSTEP_SCAN;
+            ui.btnNext.disabled = false;
+            ui.btnRun.disabled = true;
+            setStatus('scanning');
+            log('Lexical Analysis started.');
+            renderViz();
+            
+            addExplanation("Analysis started. Click 'Next Step' to scan character-by-character.", "primary");
+        }
+
+        // Add step to Educational Explanation Panel
+        function addExplanation(msg, type = "secondary") {
+            const div = document.createElement('div');
+            div.className = 'explanation-step';
+            div.style.borderLeftColor = `var(--${type})`;
+            div.innerHTML = msg;
+            ui.explanation.prepend(div);
+        }
+
+        // Core State Machine: "Next Step" Trigger
+        function stepNext() {
+            if(!isRunning) return;
+
+            if (cursor >= sourceCode.length && currentSubStep === SUBSTEP_SCAN) {
+                finalize();
+                return;
+            }
+
+            // Execute current granular sub-step
+            switch(currentSubStep) {
+                case SUBSTEP_SCAN:
+                    processScanStep();
+                    break;
+                case SUBSTEP_REGEX:
+                    processRegexStep();
+                    break;
+                case SUBSTEP_TOKEN:
+                    processTokenFoundStep();
+                    break;
+                case SUBSTEP_TABLE:
+                    processTableAddStep();
+                    break;
+            }
+        }
+
+        // Sub-Step 1: Scan individual character
+        function processScanStep() {
+            if (!currentTargetToken) {
+                const remaining = sourceCode.slice(cursor);
+                
+                // Priority Check: Whitespace (usually ignored by compilers)
+                const wsMatch = remaining.match(TOKEN_TYPES.WHITESPACE.pattern);
+                if (wsMatch) {
+                    currentTargetToken = {
+                        lexeme: wsMatch[0],
+                        type: 'WHITESPACE',
+                        config: { color: null, desc: 'Ignored whitespace' }
+                    };
+                } else {
+                    // Try to match defined token types using Regex
+                    let found = false;
+                    for (const [type, config] of Object.entries(TOKEN_TYPES)) {
+                        if (type === 'WHITESPACE') continue;
+                        const match = remaining.match(config.pattern);
+                        if (match) {
+                            currentTargetToken = { lexeme: match[0], type, config };
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    // Fallback: If no match, it's an invalid token
+                    if (!found) {
+                        currentTargetToken = {
+                            lexeme: sourceCode[cursor],
+                            type: 'INVALID',
+                            config: { color: 'token-invalid', desc: 'Illegal character' }
+                        };
+                    }
+                }
+                charIndexInToken = 0;
+            }
+
+            const globalCharPos = cursor + charIndexInToken;
+            const char = sourceCode[globalCharPos];
+            
+            setProcessStep('scan');
+            highlightChar(globalCharPos);
+            
+            const charDisplay = char === "\n" ? "Newline (\\n)" : `'${char}'`;
+            addExplanation(`<strong>Scanning Character:</strong><br>The scanner is reading character ${charDisplay}.`);
+
+            charIndexInToken++;
+            currentSubStep = SUBSTEP_REGEX;
+        }
+
+        // Sub-Step 2: Compare buffer with patterns
+        function processRegexStep() {
+            setProcessStep('regex');
+            addExplanation(`<strong>Pattern Match:</strong><br>The analyzer compares the buffered sequence with known token patterns (Regex).`);
+
+            // Check if we've consumed the full lexeme for the detected token
+            if (charIndexInToken >= currentTargetToken.lexeme.length) {
+                if (currentTargetToken.type !== 'WHITESPACE') {
+                    addExplanation(`<strong>Matched Pattern:</strong><br>${currentTargetToken.type} recognized.`, "primary");
+                    currentSubStep = SUBSTEP_TOKEN;
+                } else {
+                    // Skip whitespace quietly
+                    completeTokenTransition();
+                    currentSubStep = SUBSTEP_SCAN;
+                }
+            } else {
+                // Return to scan for more characters in this token
+                currentSubStep = SUBSTEP_SCAN;
+            }
+        }
+
+        // Sub-Step 3: Confirm Token Identification
+        function processTokenFoundStep() {
+            setProcessStep('token');
+            addExplanation(`<strong>Token Found:</strong><br>Lexeme "<code>${escapeHtml(currentTargetToken.lexeme)}</code>" classified as <strong>${currentTargetToken.type}</strong>.`, "operator");
+            
+            // Visual highlight of the whole token
+            for(let i=0; i<currentTargetToken.lexeme.length; i++) {
+                document.getElementById(`char-${cursor + i}`).classList.add('char-matched');
+            }
+
+            currentSubStep = SUBSTEP_TABLE;
+        }
+
+        // Sub-Step 4: Push to Output Table
+        function processTableAddStep() {
+            setProcessStep('table');
+            addExplanation(`<strong>Add to Table:</strong><br>Storing token metadata in the symbol table/token list.`);
+            
+            const tokenObj = {
+                line: lineNum,
+                lexeme: currentTargetToken.lexeme,
+                type: currentTargetToken.type,
+                config: currentTargetToken.config
+            };
+            tokens.push(tokenObj);
+            
+            addTokenToTable(tokenObj);
+            log(`Detected '${tokenObj.lexeme}' as ${tokenObj.type} (Line ${tokenObj.line})`, 'success');
+
+            completeTokenTransition();
+            currentSubStep = SUBSTEP_SCAN;
+            
+            if (cursor >= sourceCode.length) {
+                finalize();
+            }
+        }
+
+        // Housekeeping: Prepare for next token
+        function completeTokenTransition() {
+            // Count newlines to track line numbers
+            const newlines = (currentTargetToken.lexeme.match(/\n/g) || []).length;
+            lineNum += newlines;
+
+            cursor += currentTargetToken.lexeme.length;
+            currentTargetToken = null;
+            charIndexInToken = 0;
+            updateProgress();
+        }
+
+        // UI: Highlight current scanning position
+        function highlightChar(pos) {
+            document.querySelectorAll('.char-current').forEach(el => el.classList.remove('char-current'));
+            const el = document.getElementById(`char-${pos}`);
+            if(el) {
+                el.classList.add('char-current');
+                el.classList.add('char-scanned');
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // UI: Append to the Token Table
+        function addTokenToTable(t) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${t.line}</td>
+                <td class="${t.config.color}">${t.type}</td>
+                <td>${escapeHtml(t.lexeme)}</td>
+            `;
+            ui.table.appendChild(tr);
+            ui.table.parentElement.scrollTop = ui.table.parentElement.scrollHeight;
+        }
+
+        // UI: Update Progress Bar
+        function updateProgress() {
+            const p = (cursor / sourceCode.length) * 100;
+            ui.progressBar.style.width = `${p}%`;
+        }
+
+        // Termination logic
+        function finalize() {
+            isRunning = false;
+            ui.btnNext.disabled = true;
+            setStatus('completed');
+            setProcessStep('table');
+            addExplanation("<strong>Analysis Completed:</strong> All characters processed and tokens extracted.", "operator");
+            log('Lexical Analysis completed successfully.', 'success');
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        window.onload = () => {
+            log('System initialized and ready.');
+            sourceCode = ui.input.value;
+            renderViz();
+        };
+    </script>
+</body>
+</html>
